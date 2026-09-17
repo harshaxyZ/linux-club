@@ -6,6 +6,44 @@
   --font-heading: 'Plus Jakarta Sans', sans-serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dark Theme Tokens (Default) */
+  --bg-main: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-subsurface: #141414;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --text-ink: #FFFFFF;
+  --text-muted: #A3A3A3;
+  --text-subtle: #737373;
+  --card-bg: #0A0A0A;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+  --header-bg: rgba(0, 0, 0, 0.85);
+  --input-bg: #0A0A0A;
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-text: #FFFFFF;
+  --input-placeholder: #525252;
+}
+
+html.light {
+  /* Light Theme Tokens */
+  --bg-main: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subsurface: #F1F5F9;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.22);
+  --text-ink: #0F172A;
+  --text-muted: #475569;
+  --text-subtle: #64748B;
+  --card-bg: #FFFFFF;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --header-bg: rgba(248, 250, 252, 0.88);
+  --input-bg: #F1F5F9;
+  --input-border: rgba(0, 0, 0, 0.1);
+  --input-text: #0F172A;
+  --input-placeholder: #94A3B8;
 }
 
 html {
@@ -20,8 +58,8 @@ html {
 }
 
 body {
-  background-color: #000000;
-  color: #FFFFFF;
+  background-color: var(--bg-main);
+  color: var(--text-ink);
   font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -38,130 +76,91 @@ body {
   perspective: 1000px;
 }
 
-/* Minimalist Dark Panels & Subtle Borders */
+/* Minimalist Theme-Adaptive Panels & Subtle Borders */
 .minimal-card {
-  background: #0A0A0A;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.25s ease;
   transform: translateZ(0);
 }
 
 .minimal-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px) translateZ(0);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8);
 }
 
-.minimal-card-red-hover:hover {
-  border-color: rgba(225, 29, 72, 0.4);
-  box-shadow: 0 0 25px -5px rgba(225, 29, 72, 0.15);
-}
-
-/* Light Mode Overrides */
-html.light body {
-  background-color: #F8FAFC;
-  color: #0F172A;
-}
-
-html.light header {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-html.light header a {
-  color: #475569;
-}
-
-html.light header a:hover {
-  color: #0F172A;
-}
-
-html.light .minimal-card {
-  background: #FFFFFF !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+html:not(.light) .minimal-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.9);
 }
 
 html.light .minimal-card:hover {
-  border-color: rgba(0, 0, 0, 0.16) !important;
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.09);
 }
 
-html.light .text-white {
-  color: #0F172A !important;
+.minimal-card-red-hover:hover {
+  border-color: rgba(225, 29, 72, 0.45) !important;
+  box-shadow: 0 8px 30px -4px rgba(225, 29, 72, 0.15) !important;
 }
 
-html.light .text-\[\#A3A3A3\],
-html.light .text-\[\#737373\] {
-  color: #64748B !important;
+/* Header dynamic glass styling */
+header {
+  background-color: var(--header-bg) !important;
+  border-color: var(--border-color) !important;
 }
 
-html.light .border-white\/\[0\.08\],
-html.light .border-white\/\[0\.05\] {
-  border-color: rgba(0, 0, 0, 0.08) !important;
+/* Form Inputs within main body (excluding terminal prompt) */
+main input:not(.terminal-input),
+main textarea:not(.terminal-input),
+main select:not(.terminal-input),
+.minimal-card input:not(.terminal-input),
+.minimal-card textarea:not(.terminal-input),
+.minimal-card select:not(.terminal-input) {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
 }
 
-html.light .bg-\[\#0A0A0A\],
-html.light .bg-\[\#050505\],
-html.light .bg-\[\#121212\] {
-  background-color: #FFFFFF !important;
-}
-
-html.light input,
-html.light textarea,
-html.light select {
-  background-color: #F1F5F9 !important;
-  color: #0F172A !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder {
-  color: #94A3B8 !important;
+main input:not(.terminal-input)::placeholder,
+main textarea:not(.terminal-input)::placeholder {
+  color: var(--input-placeholder);
 }
 
 /* Fix Browser Autofill */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active,
-textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus {
+html:not(.light) input:-webkit-autofill,
+html:not(.light) input:-webkit-autofill:hover, 
+html:not(.light) input:-webkit-autofill:focus,
+html:not(.light) textarea:-webkit-autofill,
+html:not(.light) select:-webkit-autofill {
   -webkit-text-fill-color: #FFFFFF !important;
   -webkit-box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
   box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
   transition: background-color 50000s ease-in-out 0s !important;
   caret-color: #FFFFFF !important;
-  color: #FFFFFF !important;
 }
 
 html.light input:-webkit-autofill,
+html.light input:-webkit-autofill:hover,
+html.light input:-webkit-autofill:focus,
 html.light textarea:-webkit-autofill,
 html.light select:-webkit-autofill {
   -webkit-text-fill-color: #0F172A !important;
   -webkit-box-shadow: 0 0 0px 1000px #F1F5F9 inset !important;
   box-shadow: 0 0 0px 1000px #F1F5F9 inset !important;
   caret-color: #0F172A !important;
-  color: #0F172A !important;
 }
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
-}
-html.light ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 2px;
+  background: #333333;
+  border-radius: 3px;
 }
 html.light ::-webkit-scrollbar-thumb {
   background: #CBD5E1;

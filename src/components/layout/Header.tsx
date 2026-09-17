@@ -4,29 +4,18 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Logo } from '../ui/Logo';
 import { ArrowRight, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../theme/ThemeProvider';
 
 export function Header() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('site_theme') as 'dark' | 'light' | null;
-    if (saved) {
-      setTheme(saved);
-      document.documentElement.classList.toggle('light', saved === 'light');
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      // Optional default
-    }
+    setMounted(true);
   }, []);
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('site_theme', next);
-    document.documentElement.classList.toggle('light', next === 'light');
-  };
-
   return (
-    <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/[0.08] transition-all">
+    <header className="sticky top-0 z-50 backdrop-blur-xl border-b transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Logo />
@@ -34,46 +23,53 @@ export function Header() {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-8">
-          <a
-            href="#about"
-            className="text-xs font-mono uppercase tracking-wider text-[#A3A3A3] hover:text-white transition-colors"
+          <Link
+            href="/#about"
+            className="text-xs font-mono uppercase tracking-wider text-ink-muted hover:text-ink transition-colors"
           >
             About
-          </a>
-          <a
-            href="#focus-areas"
-            className="text-xs font-mono uppercase tracking-wider text-[#A3A3A3] hover:text-white transition-colors"
+          </Link>
+          <Link
+            href="/#focus-areas"
+            className="text-xs font-mono uppercase tracking-wider text-ink-muted hover:text-ink transition-colors"
           >
             Tracks
-          </a>
-          <a
-            href="#roadmap"
-            className="text-xs font-mono uppercase tracking-wider text-[#A3A3A3] hover:text-white transition-colors"
+          </Link>
+          <Link
+            href="/#events"
+            className="text-xs font-mono uppercase tracking-wider text-ink-muted hover:text-ink transition-colors"
+          >
+            Events
+          </Link>
+          <Link
+            href="/#roadmap"
+            className="text-xs font-mono uppercase tracking-wider text-ink-muted hover:text-ink transition-colors"
           >
             Roadmap
-          </a>
+          </Link>
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          {/* Theme Toggle */}
+          {/* Theme Toggle Button */}
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label="Toggle Theme"
-            className="p-2 rounded-lg border border-white/[0.08] bg-[#0A0A0A] hover:bg-[#171717] text-[#A3A3A3] hover:text-white transition-colors flex items-center justify-center cursor-pointer"
+            aria-label={mounted && theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            title={mounted && theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-2 rounded-lg border border-border bg-surface hover:bg-subsurface text-ink-muted hover:text-ink transition-colors flex items-center justify-center cursor-pointer shadow-sm"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
+            {mounted && theme === 'light' ? (
+              <Moon className="w-4 h-4 text-slate-700 hover:text-slate-900 transition-colors" />
             ) : (
-              <Moon className="w-4 h-4 text-slate-700" />
+              <Sun className="w-4 h-4 text-amber-400 hover:text-amber-300 transition-colors" />
             )}
           </button>
 
           {/* Action CTA */}
           <Link
             href="/apply"
-            className="inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] text-white font-mono font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-lg shadow-lg shadow-rose-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-lg shadow-lg shadow-rose-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Apply Now</span>
             <ArrowRight className="w-3.5 h-3.5" />

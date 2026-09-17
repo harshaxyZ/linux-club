@@ -1,6 +1,7 @@
 import React from 'react';
 import './globals.css';
 import { ScrollProgressBar } from '../components/ui/ScrollProgressBar';
+import { ThemeProvider } from '../components/theme/ThemeProvider';
 
 export default function RootLayout({
   children,
@@ -8,7 +9,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth bg-black">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <title>Linux Open Source Club</title>
         <meta
@@ -21,10 +22,32 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('site_theme');
+                  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+                  var theme = saved || (prefersLight ? 'light' : 'dark');
+                  if (theme === 'light') {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="bg-black text-white antialiased selection:bg-red-600 selection:text-white">
-        <ScrollProgressBar />
-        {children}
+      <body className="min-h-screen bg-background text-ink antialiased selection:bg-rose-600 selection:text-white transition-colors duration-200">
+        <ThemeProvider>
+          <ScrollProgressBar />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

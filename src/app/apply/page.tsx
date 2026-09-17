@@ -104,7 +104,7 @@ export default function ApplyPage() {
     setErrorMsg('');
 
     try {
-      // 1. Submit to API for Resend notification to admin (harsha210108@gmail.com)
+      // 1. Submit to API for Resend notification to admin
       await fetch('/api/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -271,7 +271,6 @@ export default function ApplyPage() {
 
     try {
       const targetEmail = authEmail || email;
-      // 1. Attempt Sign in
       const signInRes = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: authPassword,
@@ -279,7 +278,6 @@ export default function ApplyPage() {
 
       let authenticatedUser = signInRes.data?.user;
 
-      // 2. If user doesn't exist, sign them up
       if (!authenticatedUser) {
         const signupRes = await supabase.auth.signUp({
           email: targetEmail,
@@ -290,7 +288,6 @@ export default function ApplyPage() {
         });
 
         if (signupRes.error) {
-          // If error is invalid credentials (meaning user exists with different password)
           if (signupRes.error.message.toLowerCase().includes('already registered')) {
             setAuthError('Account already exists with this email. Please enter your correct password.');
             setAuthLoading(false);
@@ -304,7 +301,6 @@ export default function ApplyPage() {
         authenticatedUser = signupRes.data?.user || null;
       }
 
-      // Submit application data with user ID
       const draft = JSON.parse(sessionStorage.getItem('pending_application_draft') || '{}');
       await submitApplicationData(draft, authenticatedUser?.id);
     } catch (err: any) {
@@ -315,7 +311,7 @@ export default function ApplyPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black font-body text-white relative selection:bg-[#E11D48] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background font-body text-ink relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
       <BackgroundGrid />
       <Header />
 
@@ -325,9 +321,9 @@ export default function ApplyPage() {
           {/* Back Button */}
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-mono text-[#A3A3A3] hover:text-white transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-xs font-mono text-ink-muted hover:text-ink transition-colors mb-8"
           >
-            <ArrowLeft className="w-4 h-4 text-[#E11D48]" />
+            <ArrowLeft className="w-4 h-4 text-accent" />
             <span>Back to Home</span>
           </Link>
 
@@ -338,33 +334,33 @@ export default function ApplyPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="minimal-card rounded-3xl p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center"
             >
-              <div className="w-16 h-16 rounded-2xl bg-[#E11D48]/10 text-[#E11D48] flex items-center justify-center mb-6 border border-[#E11D48]/20 shadow-lg shadow-rose-600/10">
+              <div className="w-16 h-16 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-6 border border-accent/20 shadow-lg shadow-rose-600/10">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
 
-              <span className="font-mono text-xs text-[#E11D48] uppercase tracking-widest mb-2">
+              <span className="font-mono text-xs text-accent uppercase tracking-widest mb-2">
                 // Application Logged
               </span>
 
-              <h1 className="font-heading font-extrabold text-white text-3xl sm:text-4xl tracking-tight">
+              <h1 className="font-heading font-extrabold text-ink text-3xl sm:text-4xl tracking-tight">
                 Application Submitted Successfully
               </h1>
 
-              <p className="text-sm text-[#A3A3A3] mt-4 max-w-lg leading-relaxed">
+              <p className="text-sm text-ink-muted mt-4 max-w-lg leading-relaxed">
                 Thank you for applying to the Linux Open Source Coding Club. The core engineering team has received your submission and will review your profile shortly.
               </p>
 
-              <div className="mt-8 p-5 bg-[#050505] border border-white/[0.08] rounded-xl text-xs font-mono text-[#A3A3A3] text-left w-full max-w-md space-y-2">
-                <p><span className="text-white font-semibold">Applicant:</span> {fullName}</p>
-                <p><span className="text-white font-semibold">USN:</span> {usn}</p>
-                <p><span className="text-white font-semibold">Course &amp; Year:</span> {course === 'Others' ? courseOther : course} ({year} Year)</p>
-                <p><span className="text-white font-semibold">Status:</span> <span className="text-red-400 font-bold uppercase">● Under Review</span></p>
+              <div className="mt-8 p-5 bg-subsurface border border-border rounded-xl text-xs font-mono text-ink-muted text-left w-full max-w-md space-y-2">
+                <p><span className="text-ink font-semibold">Applicant:</span> {fullName}</p>
+                <p><span className="text-ink font-semibold">USN:</span> {usn}</p>
+                <p><span className="text-ink font-semibold">Course &amp; Year:</span> {course === 'Others' ? courseOther : course} ({year} Year)</p>
+                <p><span className="text-ink font-semibold">Status:</span> <span className="text-accent font-bold uppercase">● Under Review</span></p>
               </div>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <Link
                   href="/"
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-mono font-semibold px-6 py-3 rounded-xl transition-all"
+                  className="bg-surface hover:bg-subsurface border border-border text-ink text-xs font-mono font-semibold px-6 py-3 rounded-xl transition-all shadow-sm"
                 >
                   Return to Home
                 </Link>
@@ -374,21 +370,21 @@ export default function ApplyPage() {
             /* Application Form */
             <div className="minimal-card rounded-3xl p-6 sm:p-10 shadow-2xl">
               
-              <div className="border-b border-white/[0.08] pb-6 mb-8">
-                <div className="flex items-center gap-2 text-xs font-mono text-[#E11D48] uppercase tracking-wider mb-1">
+              <div className="border-b border-border pb-6 mb-8">
+                <div className="flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider mb-1">
                   <Terminal className="w-3.5 h-3.5" />
                   <span>// Application Form</span>
                 </div>
-                <h1 className="font-heading font-extrabold text-white text-2xl sm:text-4xl tracking-tight">
+                <h1 className="font-heading font-extrabold text-ink text-2xl sm:text-4xl tracking-tight">
                   Apply for Membership
                 </h1>
-                <p className="text-xs sm:text-sm text-[#A3A3A3] mt-2 leading-relaxed">
+                <p className="text-xs sm:text-sm text-ink-muted mt-2 leading-relaxed">
                   Enter your academic and developer details below. All applications are evaluated for the upcoming cohort.
                 </p>
               </div>
 
               {errorMsg && (
-                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono flex items-center gap-2.5">
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
@@ -398,7 +394,7 @@ export default function ApplyPage() {
                 
                 {/* Full Name */}
                 <div>
-                  <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                     Full Name *
                   </label>
                   <input
@@ -409,14 +405,14 @@ export default function ApplyPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] transition-colors"
+                    className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
                   />
                 </div>
 
                 {/* Year & Section Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Academic Year *
                     </label>
                     <select
@@ -424,7 +420,7 @@ export default function ApplyPage() {
                       required
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent transition-colors"
                     >
                       <option value="" disabled>-- Select Academic Year --</option>
                       <option value="1st">1st Year</option>
@@ -435,7 +431,7 @@ export default function ApplyPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Section *
                     </label>
                     <input
@@ -445,7 +441,7 @@ export default function ApplyPage() {
                       value={section}
                       onChange={(e) => setSection(e.target.value.toUpperCase())}
                       placeholder="e.g. A, B, C"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] uppercase transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent uppercase transition-colors"
                     />
                   </div>
                 </div>
@@ -453,7 +449,7 @@ export default function ApplyPage() {
                 {/* USN & Course Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       USN (University Serial No) *
                     </label>
                     <input
@@ -463,12 +459,12 @@ export default function ApplyPage() {
                       value={usn}
                       onChange={handleUsnChange}
                       placeholder="Enter your college USN"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm font-mono text-white placeholder:text-[#525252] uppercase focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink placeholder:text-ink-muted/50 uppercase focus:outline-none focus:border-accent transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Branch / Department *
                     </label>
                     <select
@@ -476,7 +472,7 @@ export default function ApplyPage() {
                       required
                       value={course}
                       onChange={(e) => setCourse(e.target.value)}
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent transition-colors"
                     >
                       <option value="" disabled>-- Select Department / Branch --</option>
                       <option value="CSE">Computer Science &amp; Engg (CSE)</option>
@@ -496,7 +492,7 @@ export default function ApplyPage() {
                 {/* Course Other (if selected) */}
                 {course === 'Others' && (
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Specify Branch / Course Name *
                     </label>
                     <input
@@ -506,7 +502,7 @@ export default function ApplyPage() {
                       value={courseOther}
                       onChange={(e) => setCourseOther(e.target.value)}
                       placeholder="Enter your branch name"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48]"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
                     />
                   </div>
                 )}
@@ -514,7 +510,7 @@ export default function ApplyPage() {
                 {/* Email & Phone Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Email Address *
                     </label>
                     <input
@@ -525,12 +521,12 @@ export default function ApplyPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your.email@example.com"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       Phone Number *
                     </label>
                     <input
@@ -541,7 +537,7 @@ export default function ApplyPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="10-digit mobile number"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm font-mono text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -549,8 +545,8 @@ export default function ApplyPage() {
                 {/* GitHub & LinkedIn URLs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Github className="w-3.5 h-3.5 text-white" />
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Github className="w-3.5 h-3.5 text-ink" />
                       <span>GitHub Profile URL *</span>
                     </label>
                     <input
@@ -560,13 +556,13 @@ export default function ApplyPage() {
                       value={githubUrl}
                       onChange={(e) => setGithubUrl(e.target.value)}
                       placeholder="https://github.com/username"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Linkedin className="w-3.5 h-3.5 text-red-400" />
+                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Linkedin className="w-3.5 h-3.5 text-accent" />
                       <span>LinkedIn Profile (Optional)</span>
                     </label>
                     <input
@@ -575,7 +571,7 @@ export default function ApplyPage() {
                       value={linkedinUrl}
                       onChange={(e) => setLinkedinUrl(e.target.value)}
                       placeholder="https://linkedin.com/in/username"
-                      className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] transition-colors"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -583,14 +579,14 @@ export default function ApplyPage() {
                 {/* Extra Profiles */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-mono font-semibold text-white uppercase tracking-wider">
+                    <label className="text-xs font-mono font-semibold text-ink uppercase tracking-wider">
                       Extra Coding Profiles (Optional, Max 3)
                     </label>
                     {extraLinks.length < 3 && (
                       <button
                         type="button"
                         onClick={addExtraLink}
-                        className="inline-flex items-center gap-1 text-xs font-mono text-red-400 hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-mono text-accent hover:underline cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add Link</span>
@@ -599,11 +595,11 @@ export default function ApplyPage() {
                   </div>
 
                   {extraLinks.map((link, idx) => (
-                    <div key={idx} className="flex items-center gap-3 bg-[#050505] p-3 rounded-xl border border-white/[0.08]">
+                    <div key={idx} className="flex items-center gap-3 bg-subsurface p-3 rounded-xl border border-border">
                       <select
                         value={link.label}
                         onChange={(e) => handleExtraLinkChange(idx, 'label', e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-white/[0.08] bg-[#121212] text-xs font-mono text-white focus:outline-none"
+                        className="px-3 py-1.5 rounded-lg border border-border bg-surface text-xs font-mono text-ink focus:outline-none"
                       >
                         <option value="LeetCode">LeetCode</option>
                         <option value="HackerRank">HackerRank</option>
@@ -618,13 +614,13 @@ export default function ApplyPage() {
                         value={link.url}
                         onChange={(e) => handleExtraLinkChange(idx, 'url', e.target.value)}
                         placeholder="Profile URL..."
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-[#121212] text-xs text-white placeholder:text-[#525252] focus:outline-none"
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none"
                       />
 
                       <button
                         type="button"
                         onClick={() => removeExtraLink(idx)}
-                        className="text-red-400 hover:text-red-300 p-1"
+                        className="text-accent hover:text-accent/80 p-1 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -634,7 +630,7 @@ export default function ApplyPage() {
 
                 {/* Statement of Intent */}
                 <div>
-                  <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                     Why do you want to join the Linux OSS Coding Club? * (~400 char max)
                   </label>
                   <textarea
@@ -645,9 +641,9 @@ export default function ApplyPage() {
                     value={aboutText}
                     onChange={(e) => setAboutText(e.target.value)}
                     placeholder="Tell us about your interests in Linux, DSA, competitive coding, or software engineering..."
-                    className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#0A0A0A] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48] resize-none transition-colors"
+                    className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent resize-none transition-colors"
                   />
-                  <div className="text-right text-[10px] font-mono text-[#737373] mt-1">
+                  <div className="text-right text-[10px] font-mono text-ink-muted mt-1">
                     {aboutText.length} / 400 characters
                   </div>
                 </div>
@@ -656,7 +652,7 @@ export default function ApplyPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] text-white text-xs font-mono font-bold uppercase tracking-wider py-4 rounded-xl shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold uppercase tracking-wider py-4 rounded-xl shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <span>Processing Submission...</span>
@@ -674,46 +670,46 @@ export default function ApplyPage() {
 
       {/* Auth Verification Modal on Submit */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
           <div className="minimal-card rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
             <button
               onClick={() => setShowAuthModal(false)}
-              className="absolute top-5 right-5 text-[#737373] hover:text-white p-1"
+              className="absolute top-5 right-5 text-ink-muted hover:text-ink p-1 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="w-12 h-12 rounded-2xl bg-[#E11D48]/10 text-[#E11D48] flex items-center justify-center mb-6 border border-[#E11D48]/20">
+            <div className="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-6 border border-accent/20">
               <Lock className="w-6 h-6" />
             </div>
 
-            <h3 className="font-heading font-extrabold text-white text-2xl tracking-tight">
+            <h3 className="font-heading font-extrabold text-ink text-2xl tracking-tight">
               Verify Account to Submit
             </h3>
-            <p className="text-xs text-[#A3A3A3] mt-2 mb-6 leading-relaxed">
+            <p className="text-xs text-ink-muted mt-2 mb-6 leading-relaxed">
               Verify your email to prevent spam and link your application to your student profile.
             </p>
 
             {authError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{authError}</span>
               </div>
             )}
 
             {authMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-mono">
+              <div className="mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-mono">
                 {authMsg}
               </div>
             )}
 
             {/* Auth Method Tabs */}
-            <div className="flex border-b border-white/[0.08] mb-6 font-mono text-xs">
+            <div className="flex border-b border-border mb-6 font-mono text-xs">
               <button
                 type="button"
                 onClick={() => setAuthMethod('google')}
-                className={`pb-2 flex-1 text-center font-medium transition-colors ${
-                  authMethod === 'google' ? 'text-white border-b-2 border-[#E11D48]' : 'text-[#737373]'
+                className={`pb-2 flex-1 text-center font-medium transition-colors cursor-pointer ${
+                  authMethod === 'google' ? 'text-ink border-b-2 border-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 Google OAuth
@@ -721,8 +717,8 @@ export default function ApplyPage() {
               <button
                 type="button"
                 onClick={() => setAuthMethod('magic_link')}
-                className={`pb-2 flex-1 text-center font-medium transition-colors ${
-                  authMethod === 'magic_link' ? 'text-white border-b-2 border-[#E11D48]' : 'text-[#737373]'
+                className={`pb-2 flex-1 text-center font-medium transition-colors cursor-pointer ${
+                  authMethod === 'magic_link' ? 'text-ink border-b-2 border-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 Email Magic Link
@@ -730,8 +726,8 @@ export default function ApplyPage() {
               <button
                 type="button"
                 onClick={() => setAuthMethod('password')}
-                className={`pb-2 flex-1 text-center font-medium transition-colors ${
-                  authMethod === 'password' ? 'text-white border-b-2 border-[#E11D48]' : 'text-[#737373]'
+                className={`pb-2 flex-1 text-center font-medium transition-colors cursor-pointer ${
+                  authMethod === 'password' ? 'text-ink border-b-2 border-accent' : 'text-ink-muted hover:text-ink'
                 }`}
               >
                 Password
@@ -745,7 +741,7 @@ export default function ApplyPage() {
                   type="button"
                   onClick={handleOAuthSignIn}
                   disabled={authLoading}
-                  className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#EDEDED] text-black font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#EDEDED] text-black font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-border"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -762,7 +758,7 @@ export default function ApplyPage() {
             {authMethod === 'magic_link' && (
               <form onSubmit={handleMagicLinkSignIn} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-mono text-[#A3A3A3] uppercase mb-1">
+                  <label className="block text-[11px] font-mono text-ink-muted uppercase mb-1">
                     Your Email
                   </label>
                   <input
@@ -771,13 +767,13 @@ export default function ApplyPage() {
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-white/[0.08] bg-[#050505] text-xs text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48]"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={authLoading}
-                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   <span>{authLoading ? 'Sending Link...' : 'Send Magic Link →'}</span>
@@ -789,7 +785,7 @@ export default function ApplyPage() {
             {authMethod === 'password' && (
               <form onSubmit={handlePasswordAuth} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-mono text-[#A3A3A3] uppercase mb-1">
+                  <label className="block text-[11px] font-mono text-ink-muted uppercase mb-1">
                     Email
                   </label>
                   <input
@@ -798,11 +794,11 @@ export default function ApplyPage() {
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-4 py-3 rounded-xl border border-white/[0.08] bg-[#050505] text-xs text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48]"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-mono text-[#A3A3A3] uppercase mb-1">
+                  <label className="block text-[11px] font-mono text-ink-muted uppercase mb-1">
                     Password (or create new)
                   </label>
                   <input
@@ -811,13 +807,13 @@ export default function ApplyPage() {
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full px-4 py-3 rounded-xl border border-white/[0.08] bg-[#050505] text-xs text-white placeholder:text-[#525252] focus:outline-none focus:border-[#E11D48]"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={authLoading}
-                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Key className="w-3.5 h-3.5" />
                   <span>{authLoading ? 'Authenticating...' : 'Sign In & Submit →'}</span>

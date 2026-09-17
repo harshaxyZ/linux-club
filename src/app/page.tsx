@@ -5,13 +5,15 @@ import { Hero } from '../components/home/Hero';
 import { TechMarquee } from '../components/ui/TechMarquee';
 import { About } from '../components/home/About';
 import { FocusAreas } from '../components/home/FocusAreas';
+import { WhyJoin } from '../components/home/WhyJoin';
+import { Events } from '../components/home/Events';
 import { Roadmap } from '../components/home/Roadmap';
 import { CallToAction } from '../components/home/CallToAction';
 import { BackgroundGrid } from '../components/ui/BackgroundGrid';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-ink font-body relative selection:bg-accent/30 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background text-ink font-body relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
       {/* Dynamic Animated Particles & Cyber Grid */}
       <BackgroundGrid />
       
@@ -21,6 +23,8 @@ export default function HomePage() {
         <TechMarquee />
         <About />
         <FocusAreas />
+        <WhyJoin />
+        <Events />
         <Roadmap />
         <CallToAction />
       </main>
