@@ -1,64 +1,80 @@
-# ⚡ Linux Open Source Coding Club (DBIT)
+# Linux Open Source Coding Club
 
 <div align="center">
 
-[![Live Production](https://img.shields.io/badge/Live-webuildnow.in-E11D48?style=for-the-badge&logo=vercel&logoColor=white)](https://webuildnow.in)
-[![Next.js 16](https://img.shields.io/badge/Next.js%2016-Turbopack-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3FCF8E?style=for-the-badge&logo=supabase&logoColor=black)](https://supabase.com)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![Resend](https://img.shields.io/badge/Resend-Email%20API-000000?style=for-the-badge&logo=resend&logoColor=white)](https://resend.com)
+[![Production Deployment](https://img.shields.io/badge/Production-webuildnow.in-111111?style=flat-square&logo=vercel&logoColor=white)](https://webuildnow.in)
+[![Next.js](https://img.shields.io/badge/Next.js-16%20Turbopack-111111?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-111111?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20Auth-111111?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-111111?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License](https://img.shields.io/badge/License-MIT-111111?style=flat-square)](LICENSE)
 
 <br />
 
-**The official full-stack portal and membership platform for the Linux Open Source Coding Club at Don Bosco Institute of Technology (DBIT).**
+**Official web portal and member application platform for the Linux Open Source Coding Club at Don Bosco Institute of Technology (DBIT).**
 
-[Explore Live Site](https://webuildnow.in) · [Apply for Membership](https://webuildnow.in/apply) · [Admin Portal](https://webuildnow.in/admin)
+[Live Application](https://webuildnow.in) &nbsp;|&nbsp; [Membership Portal](https://webuildnow.in/apply) &nbsp;|&nbsp; [Executive Console](https://webuildnow.in/admin)
 
 </div>
 
 ---
 
-## 🌌 Overview
+## Overview
 
-The **Linux Open Source Coding Club** platform is built with a hyper-minimalist black, white, grey, and crimson red aesthetic, engineered for **120 FPS GPU-accelerated motion**, fast interactions, and zero-latency member application management.
-
-### 🎯 Key Highlights
-
-- **⚡ 120 FPS GPU-Accelerated UI**: Subpixel rendering, hardware-accelerated transforms (`translate3d`), smooth scrolling, and dark-mode autofill protection.
-- **💻 Interactive Linux Sandbox**: Built-in interactive browser terminal supporting club commands (`help`, `about`, `events`, `focus`, `apply`, `sudo`, `clear`).
-- **📝 Member Application Flow (`/apply`)**: Instant form validation, clean 10-digit mobile number normalization, profile link aggregation (GitHub, LinkedIn, LeetCode, HackerRank), and multi-provider auth verification (Google OAuth, Email OTP, Password).
-- **🛡️ Executive Admin Console (`/admin`)**: Real-time application filtering (by Year, Status, Search), applicant evaluation workflow (Pending / Under Review / Accepted / Rejected), 1-click CSV data export, and admin invitations.
-- **📬 Automated Email Notifications**: Instant confirmation emails to applicants and dispatch alerts to the executive team via the Resend API.
-- **🔐 Cloud Infrastructure**: Powered by Supabase PostgreSQL with Row Level Security (RLS) policies and Next.js server route isolation.
+The Linux Open Source Coding Club platform is an engineering-focused web application designed with a minimalist monochrome palette and crimson accents. The platform provides interactive system utilities, real-time member registrations, automated email notifications, and an executive administration dashboard.
 
 ---
 
-## 🛠️ Tech Stack
+## Architecture and Core Modules
 
-| Layer | Technologies |
+### 1. Interactive Terminal Sandbox
+A client-side command-line interface emulating Linux terminal operations. Supports custom system commands including `help`, `about`, `events`, `focus`, `apply`, `clear`, and `sudo`.
+
+### 2. Member Application Pipeline (`/apply`)
+A structured intake system featuring:
+- Client-side input validation and 10-digit mobile number normalization.
+- Aggregation of developer profiles (GitHub, LinkedIn, LeetCode, Codeforces, HackerRank).
+- Authentication verification via Supabase GoTrue (Google OAuth, Email OTP, and Password).
+- Automated confirmation dispatch to applicants and notification routing to club leadership.
+
+### 3. Executive Administration Dashboard (`/admin`)
+A protected management workspace featuring:
+- Multi-dimensional filtering by academic year, application status, and full-text search.
+- Review workflow (Pending, Under Review, Accepted, Rejected).
+- CSV export utility for candidate records.
+- Executive team invitation system.
+
+### 4. High-Performance Design System
+- GPU-accelerated layer promotion (`translate3d`, `will-change`) for 120 FPS rendering.
+- Subpixel font rendering with `Plus Jakarta Sans` and `JetBrains Mono`.
+- Browser autofill color correction for dark theme inputs.
+
+---
+
+## Technology Stack
+
+| Layer | Specifications |
 | :--- | :--- |
-| **Frontend Framework** | [Next.js 16 (App Router)](https://nextjs.org/) + [React 19](https://react.dev/) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) + Custom Design Tokens |
-| **Typography** | `Plus Jakarta Sans` & `JetBrains Mono` |
-| **Icons & Motion** | [Lucide React](https://lucide.dev/) + [Framer Motion](https://www.framer.com/motion/) |
-| **Database & Auth** | [Supabase Cloud](https://supabase.com/) (PostgreSQL + RLS + GoTrue Auth) |
-| **Email Infrastructure** | [Resend](https://resend.com/) |
-| **Hosting & CI/CD** | [Vercel](https://vercel.com/) (Custom Domain: `webuildnow.in`) |
+| **Framework** | Next.js 16 (App Router), React 19 |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS, Custom Token Architecture |
+| **Icons & Motion** | Lucide React, Framer Motion |
+| **Database & Auth** | Supabase PostgreSQL, Row-Level Security (RLS), GoTrue Auth |
+| **Email Service** | Resend API |
+| **Hosting & CI/CD** | Vercel (Production Domain: `webuildnow.in`) |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
-- [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
-- A [Supabase](https://supabase.com/) project
-- A [Resend](https://resend.com/) API Key
+- Node.js (v18.0.0 or higher)
+- npm, pnpm, or yarn
+- Supabase Project Instance
+- Resend API Account
 
-### Installation
+### Local Setup
 
 1. **Clone the repository**:
    ```bash
@@ -72,72 +88,70 @@ The **Linux Open Source Coding Club** platform is built with a hyper-minimalist 
    ```
 
 3. **Configure Environment Variables**:
-   Copy the example environment file and fill in your keys:
-   ```bash
-   cp .env.example .env.local
-   ```
-   Edit `.env.local`:
+   Create a `.env.local` file in the root directory:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   RESEND_API_KEY=re_your_api_key
+   RESEND_API_KEY=re_your_resend_api_key
    ADMIN_EMAIL=admin@linuxossclub.org
    NEXT_PUBLIC_APP_URL=https://webuildnow.in
    ```
 
-4. **Start the local development server**:
+4. **Run the development server**:
    ```bash
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   Access the application at `http://localhost:3000`.
 
-5. **Build for production**:
+5. **Production Build**:
    ```bash
    npm run build
    ```
 
 ---
 
-## 📁 Project Structure
+## Directory Structure
 
 ```
 linux-club/
 ├── src/
 │   ├── app/
 │   │   ├── account/          # User profile view
-│   │   ├── admin/            # Executive Super Admin portal
+│   │   ├── admin/            # Executive administration portal
 │   │   ├── api/
-│   │   │   ├── admin/invite/ # Admin invitation email route
-│   │   │   └── apply/        # Application processor + Resend alert
-│   │   ├── apply/            # Member application & auth gate
-│   │   ├── globals.css       # 120 FPS CSS tokens & GPU animations
-│   │   ├── icon.svg          # Club vector favicon
-│   │   ├── layout.tsx        # Global fonts and metadata
-│   │   └── page.tsx          # Landing page (Hero, Terminal, Focus, etc.)
+│   │   │   ├── admin/invite/ # Admin invitation handler
+│   │   │   └── apply/        # Application processor & Resend dispatcher
+│   │   ├── apply/            # Member application portal
+│   │   ├── globals.css       # Performance utilities and design tokens
+│   │   ├── icon.svg          # Vector favicon
+│   │   ├── layout.tsx        # Root layout, fonts, and metadata
+│   │   └── page.tsx          # Landing page
 │   ├── components/
-│   │   ├── home/             # Hero, About, Terminal, FocusAreas, Roadmap
-│   │   ├── layout/           # Header, Footer
-│   │   └── ui/               # Logo, BackgroundGrid, TechMarquee, ScrollProgress
+│   │   ├── home/             # Landing page sections (Hero, Terminal, Focus Areas)
+│   │   ├── layout/           # Global Header and Footer
+│   │   └── ui/               # Reusable UI primitives
 │   └── lib/
-│       ├── supabase/         # Client and server-side Supabase factories
-│       └── utils.ts          # Utility functions
+│       ├── supabase/         # Client and server database clients
+│       └── utils.ts          # Helper utilities
 ├── supabase/
-│   └── migrations/           # PostgreSQL schemas, RLS, and seed scripts
-└── tailwind.config.js        # Minimalist monochrome + crimson color scale
+│   └── migrations/           # Database schemas, policies, and seeds
+├── LICENSE                   # MIT License
+├── package.json              # Project dependencies and scripts
+├── tailwind.config.js        # Design tokens and theme configuration
+└── tsconfig.json             # TypeScript compiler configuration
 ```
 
 ---
 
-## 🔒 Security & Privacy
+## Security and Data Protection
 
-- **Row Level Security (RLS)**: Enforced on all Supabase tables (`applications`, `admins`, `admin_invitations`).
-- **Server Route Isolation**: Sensitive mutations and Resend dispatches execute on server routes with isolated `SUPABASE_SERVICE_ROLE_KEY`.
-- **Stealth Admin Route**: Admin management is protected and accessible exclusively at `/admin`.
+- **Row-Level Security (RLS)**: Enforced across all PostgreSQL tables (`applications`, `admins`, `admin_invitations`).
+- **Server Route Isolation**: Sensitive database transactions and email dispatches execute on Next.js server routes using isolated service keys.
+- **Route Protection**: The executive administration portal is unlisted and accessible exclusively via `/admin`.
 
 ---
 
-## 📜 License & Attribution
+## License
 
-Crafted with ❤️ for the students of **Don Bosco Institute of Technology (DBIT)** and the open source community.
-Licensed under the [MIT License](LICENSE).
+This project is open-source software licensed under the [MIT License](LICENSE).
