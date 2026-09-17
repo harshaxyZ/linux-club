@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #000000;
+  color: #FFFFFF;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 120 FPS GPU Acceleration & Smooth Motion */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Minimalist Dark Panels & Subtle Borders */
+.minimal-card {
+  background: #0A0A0A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  transform: translateZ(0);
+}
+
+.minimal-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+}
+
+.minimal-card-red-hover:hover {
+  border-color: rgba(225, 29, 72, 0.4);
+  box-shadow: 0 0 25px -5px rgba(225, 29, 72, 0.15);
+}
+
+/* Fix Browser Autofill White Background Glitch */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #FFFFFF !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
+  box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
+  transition: background-color 50000s ease-in-out 0s !important;
+  caret-color: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E11D48;
+}
