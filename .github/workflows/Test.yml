@@ -1,26 +1,34 @@
 name: Test Vercel Token
 
-on:
-workflow_dispatch:
+"on":
+  workflow_dispatch:
 
 jobs:
-test:
-runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Install Vercel CLI
-    run: npm install --global vercel@latest
+    steps:
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-  - name: Test Vercel Authentication
-    run: |
-      vercel whoami --token="$VERCEL_TOKEN"
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Test Vercel Authentication
+        run: vercel whoami --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-  - name: Check Project Configuration
-    run: |
-      echo "Project ID configured: $([ -n "$VERCEL_PROJECT_ID" ] && echo YES || echo NO)"
-      echo "Org ID configured: $([ -n "$VERCEL_ORG_ID" ] && echo YES || echo NO)"
-    env:
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      - name: Check Project Configuration
+        run: |
+          if [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "Project ID: configured"
+          else
+            echo "Project ID: MISSING"
+          fi
+
+          if [ -n "$VERCEL_ORG_ID" ]; then
+            echo "Org ID: configured"
+          else
+            echo "Org ID: MISSING"
+          fi
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
