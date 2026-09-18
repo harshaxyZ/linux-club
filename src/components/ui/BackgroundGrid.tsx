@@ -37,8 +37,10 @@ export function BackgroundGrid() {
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Subtle monochromatic grid
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+      const isLight = document.documentElement.classList.contains('light');
+
+      // Grid line colors adapting to theme
+      ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.035)' : 'rgba(255, 255, 255, 0.025)';
       ctx.lineWidth = 1;
       const gridSize = 64;
       for (let x = 0; x < width; x += gridSize) {
@@ -64,9 +66,16 @@ export function BackgroundGrid() {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        ctx.fillStyle = p.isRed
-          ? `rgba(239, 68, 68, ${p.alpha * 1.5})`
-          : `rgba(255, 255, 255, ${p.alpha})`;
+        if (p.isRed) {
+          ctx.fillStyle = isLight
+            ? `rgba(225, 29, 72, ${p.alpha * 0.9})`
+            : `rgba(239, 68, 68, ${p.alpha * 1.5})`;
+        } else {
+          ctx.fillStyle = isLight
+            ? `rgba(15, 23, 42, ${p.alpha * 0.5})`
+            : `rgba(255, 255, 255, ${p.alpha})`;
+        }
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -78,9 +87,15 @@ export function BackgroundGrid() {
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < 110) {
-            ctx.strokeStyle = p.isRed || p2.isRed
-              ? `rgba(239, 68, 68, ${0.12 * (1 - dist / 110)})`
-              : `rgba(255, 255, 255, ${0.06 * (1 - dist / 110)})`;
+            if (p.isRed || p2.isRed) {
+              ctx.strokeStyle = isLight
+                ? `rgba(225, 29, 72, ${0.1 * (1 - dist / 110)})`
+                : `rgba(239, 68, 68, ${0.12 * (1 - dist / 110)})`;
+            } else {
+              ctx.strokeStyle = isLight
+                ? `rgba(15, 23, 42, ${0.05 * (1 - dist / 110)})`
+                : `rgba(255, 255, 255, ${0.06 * (1 - dist / 110)})`;
+            }
             ctx.lineWidth = 0.6;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -102,9 +117,9 @@ export function BackgroundGrid() {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-black">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-red-600/[0.04] blur-[140px] rounded-full" />
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" />
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-background transition-colors duration-200">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent/[0.04] blur-[140px] rounded-full pointer-events-none" />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-80" />
     </div>
   );
 }

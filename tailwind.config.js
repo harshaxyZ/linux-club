@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,21 +9,27 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#050505',
-        surface: '#0D0D0D',
-        subsurface: '#171717',
-        border: 'rgba(255, 255, 255, 0.08)',
-        borderHover: 'rgba(255, 255, 255, 0.2)',
+        background: 'var(--bg-main)',
+        surface: 'var(--bg-surface)',
+        subsurface: 'var(--bg-subsurface)',
+        border: 'var(--border-color)',
+        borderHover: 'var(--border-hover)',
         ink: {
-          DEFAULT: '#FFFFFF',
-          muted: '#A3A3A3',
-          dark: '#525252',
+          DEFAULT: 'var(--text-ink)',
+          muted: 'var(--text-muted)',
+          dark: 'var(--text-subtle)',
+        },
+        accent: {
+          DEFAULT: '#E11D48',
+          hover: '#F43F5E',
+          glow: 'rgba(225, 29, 72, 0.35)',
+          terminal: '#10B981',
         },
         brand: {
-          red: '#EF4444',
-          'red-dark': '#DC2626',
-          'red-crimson': '#B91C1C',
-          'red-glow': 'rgba(239, 68, 68, 0.4)',
+          red: '#E11D48',
+          'red-dark': '#BE123C',
+          'red-crimson': '#9F1239',
+          'red-glow': 'rgba(225, 29, 72, 0.35)',
         },
       },
       fontFamily: {

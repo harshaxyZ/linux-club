@@ -14,9 +14,14 @@ import {
   Lock, 
   Download,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Sun,
+  Moon,
+  ArrowLeft
 } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
+import { useTheme } from '../../components/theme/ThemeProvider';
 
 interface Application {
   id: string;
@@ -37,6 +42,8 @@ interface Application {
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@linuxossclub.org';
 
 export default function AdminPage() {
+  const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -57,6 +64,10 @@ export default function AdminPage() {
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check Supabase session for admin
   useEffect(() => {
@@ -130,7 +141,6 @@ export default function AdminPage() {
       });
 
       if (error) {
-        // Authorize admin credentials
         if (loginEmail.includes('@') && loginPassword.length >= 6) {
           setIsAuthenticated(true);
           setCurrentUserEmail(loginEmail);
@@ -223,28 +233,45 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black px-4 font-body relative selection:bg-red-600 selection:text-white">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 font-body text-ink relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
         <BackgroundGrid />
         
         <div className="w-full max-w-md minimal-card rounded-3xl p-8 shadow-2xl relative z-10">
-          <div className="flex justify-center mb-6">
-            <Logo />
+          <div className="flex justify-between items-center mb-6">
+            <Link href="/" className="text-xs font-mono text-ink-muted hover:text-ink flex items-center gap-1.5 transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back</span>
+            </Link>
+            <Logo showText={false} />
+            {/* Theme toggle on login screen */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-lg border border-border bg-surface hover:bg-subsurface text-ink-muted hover:text-ink transition-colors cursor-pointer"
+              title="Toggle Theme"
+            >
+              {mounted && theme === 'light' ? (
+                <Moon className="w-4 h-4 text-slate-700" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
           </div>
           
           <div className="text-center mb-8">
-            <span className="font-mono text-xs text-red-500 uppercase tracking-wider">
+            <span className="font-mono text-xs text-accent uppercase tracking-wider">
               // Super Admin Console
             </span>
-            <h1 className="font-heading font-extrabold text-white text-2xl mt-1">
+            <h1 className="font-heading font-extrabold text-ink text-2xl mt-1">
               Admin Authentication
             </h1>
-            <p className="text-xs text-[#A3A3A3] mt-1">
+            <p className="text-xs text-ink-muted mt-1">
               Authorized login for executive board and team leads.
             </p>
           </div>
 
           {loginError && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{loginError}</span>
             </div>
@@ -255,7 +282,7 @@ export default function AdminPage() {
             type="button"
             onClick={handleGoogleOAuthLogin}
             disabled={oauthLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#EDEDED] text-black font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#EDEDED] text-black font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-border"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -267,14 +294,14 @@ export default function AdminPage() {
           </button>
 
           <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-white/[0.08]" />
-            <span className="px-3 text-[10px] font-mono text-[#737373] uppercase">Or Password Auth</span>
-            <div className="flex-grow border-t border-white/[0.08]" />
+            <div className="flex-grow border-t border-border" />
+            <span className="px-3 text-[10px] font-mono text-ink-muted uppercase">Or Password Auth</span>
+            <div className="flex-grow border-t border-border" />
           </div>
 
           <form onSubmit={handlePasswordLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+              <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                 Admin Email
               </label>
               <input
@@ -283,12 +310,12 @@ export default function AdminPage() {
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="admin@linuxossclub.org"
-                className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#050505] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-red-500 transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+              <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                 Password
               </label>
               <input
@@ -297,13 +324,13 @@ export default function AdminPage() {
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#050505] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-red-500 transition-colors"
+                className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl shadow-md shadow-red-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl shadow-md shadow-rose-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Lock className="w-4 h-4" />
               <span>Authenticate Session →</span>
@@ -315,25 +342,42 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-black font-body text-white relative selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-background font-body text-ink relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
       <BackgroundGrid />
 
       {/* Admin Navbar */}
-      <header className="bg-black/90 backdrop-blur-xl border-b border-white/[0.08] sticky top-0 z-40">
+      <header className="border-b border-border sticky top-0 z-40 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Logo showText={false} />
-            <span className="font-heading font-bold text-white text-base">
-              Linux OSS Club <span className="text-red-400 font-mono text-xs uppercase bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded ml-1">Super Admin CMS</span>
+            <Link href="/">
+              <Logo showText={false} />
+            </Link>
+            <span className="font-heading font-bold text-ink text-base">
+              Linux OSS Club <span className="text-accent font-mono text-xs uppercase bg-accent/10 border border-accent/20 px-2 py-0.5 rounded ml-1">Super Admin CMS</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={mounted && theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={mounted && theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="p-2 rounded-lg border border-border bg-surface hover:bg-subsurface text-ink-muted hover:text-ink transition-colors flex items-center justify-center cursor-pointer shadow-sm"
+            >
+              {mounted && theme === 'light' ? (
+                <Moon className="w-4 h-4 text-slate-700" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
+
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#121212] hover:bg-[#1C1C1C] border border-white/[0.08] text-xs font-mono font-semibold text-white px-3.5 py-2 rounded-xl transition-all"
+              className="inline-flex items-center gap-2 bg-surface hover:bg-subsurface border border-border text-xs font-mono font-semibold text-ink px-3.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-red-400" />
+              <UserPlus className="w-3.5 h-3.5 text-accent" />
               <span>Add Admin</span>
             </button>
 
@@ -342,7 +386,7 @@ export default function AdminPage() {
                 supabase.auth.signOut();
                 setIsAuthenticated(false);
               }}
-              className="text-xs font-mono text-red-400 hover:text-red-300 flex items-center gap-1.5 px-3 py-2"
+              className="text-xs font-mono text-accent hover:underline flex items-center gap-1.5 px-3 py-2 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign Out</span>
@@ -357,10 +401,10 @@ export default function AdminPage() {
         {/* Controls Bar & Stats */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 minimal-card p-6 rounded-3xl shadow-xl">
           <div>
-            <h2 className="font-heading font-extrabold text-white text-xl">
+            <h2 className="font-heading font-extrabold text-ink text-xl">
               Applicant Tracker &amp; Submissions
             </h2>
-            <p className="text-xs font-mono text-[#A3A3A3] mt-0.5">
+            <p className="text-xs font-mono text-ink-muted mt-0.5">
               Total Logged: {apps.length} • Filtered: {filteredApps.length} • Super Admin: {currentUserEmail || SUPER_ADMIN_EMAIL}
             </p>
           </div>
@@ -369,13 +413,13 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             {/* Search */}
             <div className="relative flex-1 sm:w-64">
-              <Search className="w-3.5 h-3.5 text-[#737373] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search name, USN, email..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-white/[0.08] bg-[#050505] text-xs text-white placeholder:text-[#525252] focus:outline-none focus:border-red-500 font-mono"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent font-mono"
               />
             </div>
 
@@ -383,7 +427,7 @@ export default function AdminPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-white/[0.08] bg-[#050505] text-xs font-mono text-white focus:outline-none"
+              className="px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono text-ink focus:outline-none"
             >
               <option value="All">All Years</option>
               <option value="1st">1st Year</option>
@@ -396,7 +440,7 @@ export default function AdminPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-white/[0.08] bg-[#050505] text-xs font-mono text-white focus:outline-none"
+              className="px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono text-ink focus:outline-none"
             >
               <option value="All">All Statuses</option>
               <option value="pending">Pending</option>
@@ -408,9 +452,9 @@ export default function AdminPage() {
             {/* Export Button */}
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/[0.08] bg-white/5 hover:bg-white/10 text-xs font-mono text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-surface hover:bg-subsurface text-xs font-mono text-ink transition-colors shadow-sm cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-red-400" />
+              <Download className="w-3.5 h-3.5 text-accent" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -423,7 +467,7 @@ export default function AdminPage() {
           <div className="lg:col-span-7 minimal-card rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#050505] border-b border-white/[0.08] text-[#737373] uppercase font-mono text-[10px]">
+                <thead className="bg-subsurface border-b border-border text-ink-muted uppercase font-mono text-[10px]">
                   <tr>
                     <th className="p-4">Student</th>
                     <th className="p-4">Branch &amp; Year</th>
@@ -431,10 +475,10 @@ export default function AdminPage() {
                     <th className="p-4 text-right">Review</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-border">
                   {filteredApps.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-[#737373] font-mono text-xs">
+                      <td colSpan={4} className="p-8 text-center text-ink-muted font-mono text-xs">
                         No applications logged in system yet.
                       </td>
                     </tr>
@@ -443,23 +487,23 @@ export default function AdminPage() {
                       <tr
                         key={app.id}
                         onClick={() => setSelectedApp(app)}
-                        className={`cursor-pointer hover:bg-white/[0.04] transition-colors ${
-                          selectedApp?.id === app.id ? 'bg-red-500/10 border-l-2 border-red-500' : ''
+                        className={`cursor-pointer hover:bg-subsurface/60 transition-colors ${
+                          selectedApp?.id === app.id ? 'bg-accent/10 border-l-2 border-accent' : ''
                         }`}
                       >
                         <td className="p-4">
-                          <div className="font-heading font-semibold text-white text-sm">{app.full_name}</div>
-                          <div className="font-mono text-[#737373] text-[11px]">{app.usn}</div>
+                          <div className="font-heading font-semibold text-ink text-sm">{app.full_name}</div>
+                          <div className="font-mono text-ink-muted text-[11px]">{app.usn}</div>
                         </td>
-                        <td className="p-4 font-mono text-[#A3A3A3]">
-                          <div className="text-white">{app.course}</div>
-                          <div className="text-[10px] text-[#525252]">{app.year} Year (Sec {app.section})</div>
+                        <td className="p-4 font-mono text-ink-muted">
+                          <div className="text-ink">{app.course}</div>
+                          <div className="text-[10px] text-ink-muted">{app.year} Year (Sec {app.section})</div>
                         </td>
                         <td className="p-4 font-mono">
-                          {app.status === 'pending' && <span className="text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full font-bold">Pending</span>}
-                          {app.status === 'under_review' && <span className="text-white bg-white/10 border border-white/20 px-2 py-0.5 rounded-full font-bold">In Review</span>}
-                          {app.status === 'accepted' && <span className="text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full font-bold">Accepted</span>}
-                          {app.status === 'rejected' && <span className="text-[#737373] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full font-bold">Rejected</span>}
+                          {app.status === 'pending' && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">Pending</span>}
+                          {app.status === 'under_review' && <span className="text-sky-500 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full font-bold">In Review</span>}
+                          {app.status === 'accepted' && <span className="text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full font-bold">Accepted</span>}
+                          {app.status === 'rejected' && <span className="text-ink-muted bg-subsurface border border-border px-2 py-0.5 rounded-full font-bold">Rejected</span>}
                         </td>
                         <td className="p-4 text-right">
                           <button
@@ -467,7 +511,7 @@ export default function AdminPage() {
                               e.stopPropagation();
                               setSelectedApp(app);
                             }}
-                            className="text-red-400 font-mono text-xs hover:underline"
+                            className="text-accent font-mono text-xs hover:underline cursor-pointer"
                           >
                             Details →
                           </button>
@@ -484,23 +528,23 @@ export default function AdminPage() {
           <div className="lg:col-span-5 minimal-card rounded-3xl p-6 shadow-xl flex flex-col justify-between">
             {selectedApp ? (
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                <div className="flex items-center justify-between border-b border-border pb-4">
                   <div>
-                    <h3 className="font-heading font-extrabold text-white text-xl">{selectedApp.full_name}</h3>
-                    <p className="font-mono text-xs text-[#A3A3A3] mt-0.5">{selectedApp.usn} • {selectedApp.course} ({selectedApp.year} Year)</p>
+                    <h3 className="font-heading font-extrabold text-ink text-xl">{selectedApp.full_name}</h3>
+                    <p className="font-mono text-xs text-ink-muted mt-0.5">{selectedApp.usn} • {selectedApp.course} ({selectedApp.year} Year)</p>
                   </div>
-                  <span className="font-mono text-[11px] text-[#525252]">{selectedApp.created_at}</span>
+                  <span className="font-mono text-[11px] text-ink-muted">{selectedApp.created_at}</span>
                 </div>
 
                 <div className="space-y-3.5 text-xs font-mono">
                   <div>
-                    <span className="text-[#737373] uppercase text-[10px] block mb-1">Contact:</span>
-                    <p className="text-white">{selectedApp.email} • {selectedApp.phone}</p>
+                    <span className="text-ink-muted uppercase text-[10px] block mb-1">Contact:</span>
+                    <p className="text-ink">{selectedApp.email} • {selectedApp.phone}</p>
                   </div>
 
                   <div>
-                    <span className="text-[#737373] uppercase text-[10px] block mb-1">GitHub:</span>
-                    <a href={selectedApp.github_url} target="_blank" rel="noreferrer" className="text-red-400 hover:underline inline-flex items-center gap-1">
+                    <span className="text-ink-muted uppercase text-[10px] block mb-1">GitHub:</span>
+                    <a href={selectedApp.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1">
                       <span>{selectedApp.github_url}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
@@ -508,8 +552,8 @@ export default function AdminPage() {
 
                   {selectedApp.linkedin_url && (
                     <div>
-                      <span className="text-[#737373] uppercase text-[10px] block mb-1">LinkedIn:</span>
-                      <a href={selectedApp.linkedin_url} target="_blank" rel="noreferrer" className="text-white hover:underline inline-flex items-center gap-1">
+                      <span className="text-ink-muted uppercase text-[10px] block mb-1">LinkedIn:</span>
+                      <a href={selectedApp.linkedin_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1">
                         <span>{selectedApp.linkedin_url}</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
@@ -517,18 +561,18 @@ export default function AdminPage() {
                   )}
 
                   <div>
-                    <span className="text-[#737373] uppercase text-[10px] block mb-1">Statement of Interest:</span>
-                    <p className="bg-[#050505] border border-white/[0.08] p-3.5 rounded-xl text-[#D4D4D4] leading-relaxed font-body text-xs">
+                    <span className="text-ink-muted uppercase text-[10px] block mb-1">Statement of Interest:</span>
+                    <p className="bg-subsurface border border-border p-3.5 rounded-xl text-ink leading-relaxed font-body text-xs">
                       {selectedApp.about_text}
                     </p>
                   </div>
                 </div>
 
                 {/* Status Toggle Actions */}
-                <div className="pt-6 border-t border-white/[0.08] flex flex-wrap items-center gap-2">
+                <div className="pt-6 border-t border-border flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleStatusUpdate(selectedApp.id, 'accepted')}
-                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Accept</span>
@@ -536,7 +580,7 @@ export default function AdminPage() {
 
                   <button
                     onClick={() => handleStatusUpdate(selectedApp.id, 'under_review')}
-                    className="flex-1 bg-[#1A1A1A] hover:bg-[#262626] text-white font-mono font-bold text-xs py-3 rounded-xl border border-white/[0.08] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 bg-subsurface hover:bg-subsurface/80 text-ink font-mono font-bold text-xs py-3 rounded-xl border border-border transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <Clock className="w-4 h-4" />
                     <span>In Review</span>
@@ -544,7 +588,7 @@ export default function AdminPage() {
 
                   <button
                     onClick={() => handleStatusUpdate(selectedApp.id, 'rejected')}
-                    className="flex-1 bg-white/5 hover:bg-white/10 text-[#737373] hover:text-white font-mono font-bold text-xs py-3 rounded-xl border border-white/[0.08] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 bg-surface hover:bg-subsurface text-ink-muted hover:text-ink font-mono font-bold text-xs py-3 rounded-xl border border-border transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <XCircle className="w-4 h-4" />
                     <span>Reject</span>
@@ -552,8 +596,8 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center text-[#737373]">
-                <Terminal className="w-10 h-10 text-white/20 mb-3" />
+              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center text-ink-muted">
+                <Terminal className="w-10 h-10 opacity-30 mb-3" />
                 <p className="text-xs font-mono">Select an application from the table to inspect details.</p>
               </div>
             )}
@@ -565,23 +609,23 @@ export default function AdminPage() {
 
       {/* Add Admin Modal */}
       {inviteModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
           <div className="minimal-card rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
-            <h3 className="font-heading font-extrabold text-white text-xl">
+            <h3 className="font-heading font-extrabold text-ink text-xl">
               Invite Administrator
             </h3>
-            <p className="text-xs text-[#A3A3A3] mt-1 mb-6 leading-relaxed">
+            <p className="text-xs text-ink-muted mt-1 mb-6 leading-relaxed">
               Dispatches an invitation email via Resend allowing your colleague to authenticate via Google OAuth or credentials.
             </p>
 
             {inviteSuccess ? (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono text-center">
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-mono text-center">
                 ✓ Invitation email sent successfully!
               </div>
             ) : (
               <form onSubmit={handleSendInvite} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono font-semibold text-white uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                     Colleague's Email Address
                   </label>
                   <input
@@ -590,22 +634,22 @@ export default function AdminPage() {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="colleague@example.com"
-                    className="w-full px-4 py-3.5 rounded-xl border border-white/[0.08] bg-[#050505] text-sm text-white placeholder:text-[#525252] focus:outline-none focus:border-red-500"
+                    className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.08]">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <button
                     type="button"
                     onClick={() => setInviteModalOpen(false)}
-                    className="px-4 py-2 text-xs font-mono text-[#737373] hover:text-white"
+                    className="px-4 py-2 text-xs font-mono text-ink-muted hover:text-ink cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={inviteLoading}
-                    className="bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all disabled:opacity-50"
+                    className="bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer shadow-md"
                   >
                     {inviteLoading ? 'Sending...' : 'Send Invitation →'}
                   </button>

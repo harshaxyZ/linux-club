@@ -29,10 +29,10 @@ const partners = [
 
 export function TechMarquee() {
   return (
-    <div className="w-full overflow-hidden border-y border-white/[0.08] bg-[#050505] py-5 select-none relative">
-      {/* Edge gradient masks for seamless fade */}
-      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+    <div className="w-full overflow-hidden border-y border-border bg-surface/60 py-5 select-none relative transition-colors duration-200">
+      {/* Edge gradient masks for seamless fade adapting to background */}
+      <div className="absolute left-0 inset-y-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 inset-y-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
       <div className="flex w-max animate-marquee space-x-8">
         {[...partners, ...partners].map((item, i) => {
@@ -40,16 +40,16 @@ export function TechMarquee() {
           return (
             <div
               key={i}
-              className="flex items-center gap-3 px-5 py-2 rounded-xl bg-[#0D0D0D] border border-white/[0.06] hover:border-red-500/40 transition-colors group cursor-default"
+              className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-surface border border-border hover:border-accent/40 shadow-sm transition-all group cursor-default"
             >
-              <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center text-white group-hover:text-red-500 transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-subsurface flex items-center justify-center text-ink group-hover:text-accent transition-colors">
                 <Icon className="w-3.5 h-3.5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-heading font-bold text-xs text-white tracking-tight group-hover:text-red-400 transition-colors">
+                <span className="font-heading font-bold text-xs text-ink tracking-tight group-hover:text-accent transition-colors">
                   {item.name}
                 </span>
-                <span className="font-mono text-[9px] text-[#737373] uppercase tracking-wider">
+                <span className="font-mono text-[9px] text-ink-muted uppercase tracking-wider">
                   {item.tag}
                 </span>
               </div>

@@ -22,11 +22,13 @@ export function InteractiveTerminal() {
 
     let output = '';
     if (cmd === 'help') {
-      output = 'Available commands: about, tracks, apply, specs, clear';
+      output = 'Available commands: about, tracks, events, apply, specs, clear';
     } else if (cmd === 'about') {
       output = 'Linux OSS Club: Premier collective mastering Linux, DSA, and open source systems.';
     } else if (cmd === 'tracks') {
       output = '1. DSA & Problem Solving  2. Linux Systems Architecture  3. Cloud & Web  4. AI Tooling';
+    } else if (cmd === 'events') {
+      output = 'Upcoming: Linux OSS HackSprint v1.0 • Weekly Vim & Shell Bootcamp every Wednesday.';
     } else if (cmd === 'apply') {
       output = 'Navigating to /apply for membership registration.';
     } else if (cmd === 'specs') {
@@ -44,7 +46,7 @@ export function InteractiveTerminal() {
   };
 
   return (
-    <div className="w-full rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.08] shadow-2xl relative">
+    <div className="w-full rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.12] dark:border-white/[0.08] shadow-2xl relative">
       {/* Titlebar with Minimalist Controls */}
       <div className="bg-[#050505] px-4 py-3 flex flex-wrap items-center justify-between border-b border-white/[0.06] gap-2">
         <div className="flex items-center gap-3">
@@ -61,7 +63,7 @@ export function InteractiveTerminal() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setActiveTab('neofetch')}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
                 activeTab === 'neofetch'
                   ? 'bg-white/10 text-white font-semibold'
                   : 'text-[#737373] hover:text-white'
@@ -71,7 +73,7 @@ export function InteractiveTerminal() {
             </button>
             <button
               onClick={() => setActiveTab('dsa')}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
                 activeTab === 'dsa'
                   ? 'bg-white/10 text-white font-semibold'
                   : 'text-[#737373] hover:text-white'
@@ -81,7 +83,7 @@ export function InteractiveTerminal() {
             </button>
             <button
               onClick={() => setActiveTab('kernel')}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer ${
                 activeTab === 'kernel'
                   ? 'bg-white/10 text-white font-semibold'
                   : 'text-[#737373] hover:text-white'
@@ -95,7 +97,7 @@ export function InteractiveTerminal() {
         {/* Copy command action */}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[11px] font-mono text-[#737373] hover:text-white bg-white/[0.04] px-2.5 py-1 rounded transition-colors"
+          className="flex items-center gap-1.5 text-[11px] font-mono text-[#737373] hover:text-white bg-white/[0.04] hover:bg-white/[0.08] px-2.5 py-1 rounded transition-colors cursor-pointer"
         >
           {copied ? <Check className="w-3 h-3 text-red-400" /> : <Copy className="w-3 h-3" />}
           <span>{copied ? 'Copied' : 'Clone Repo'}</span>
@@ -182,17 +184,17 @@ export function InteractiveTerminal() {
 
         {/* Command input prompt */}
         <form onSubmit={handleRunCommand} className="flex items-center gap-2 mt-6 pt-3 border-t border-white/[0.08]">
-          <span className="text-red-500 font-bold">guest@linux-oss:~$</span>
+          <span className="text-red-500 font-bold shrink-0">guest@linux-oss:~$</span>
           <input
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             placeholder="Type 'help', 'tracks', or 'apply'..."
-            className="flex-1 bg-transparent text-white text-xs font-mono outline-none placeholder:text-[#525252]"
+            className="terminal-input flex-1 !bg-transparent !text-white text-xs font-mono !border-none !outline-none placeholder:!text-[#525252]"
           />
           <button
             type="submit"
-            className="text-xs font-mono text-[#737373] hover:text-white flex items-center gap-1"
+            className="text-xs font-mono text-[#737373] hover:text-white flex items-center gap-1 cursor-pointer"
           >
             <span>Run</span>
             <CornerDownLeft className="w-3 h-3" />
