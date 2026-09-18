@@ -255,7 +255,7 @@ export default function ApplyPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/apply` : undefined,
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/apply` : undefined,
         },
       });
 

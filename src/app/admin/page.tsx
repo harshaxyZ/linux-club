@@ -92,10 +92,16 @@ export default function AdminPage() {
         }
 
         // 2. Check existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
           setIsAuthenticated(true);
-          setCurrentUserEmail(session.user.email || 'harsha210108@gmail.com');
+          setCurrentUserEmail(user.email || 'harsha210108@gmail.com');
+        } else {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            setIsAuthenticated(true);
+            setCurrentUserEmail(session.user.email || 'harsha210108@gmail.com');
+          }
         }
       } catch (err) {
         console.error('Session error', err);
@@ -163,7 +169,7 @@ export default function AdminPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined,
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback?next=/admin` : undefined,
         },
       });
       if (error) {
@@ -366,7 +372,7 @@ export default function AdminPage() {
                 required
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="admin@linuxossclub.org"
+                placeholder="harsha210108@gmail.com"
                 className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent transition-colors"
               />
             </div>
