@@ -39,8 +39,6 @@ interface Application {
   created_at: string;
 }
 
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'harsha210108@gmail.com';
-
 export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -69,65 +67,37 @@ export default function AdminPage() {
     setMounted(true);
   }, []);
 
-  // Check Supabase session for admin & handle PKCE OAuth code
+  // Check Supabase session
   useEffect(() => {
     async function checkSession() {
-      if (typeof window !== 'undefined') {
-        // 1. Check local session storage first
-        if (sessionStorage.getItem('admin_authenticated') === 'true') {
-          setIsAuthenticated(true);
-          setCurrentUserEmail(sessionStorage.getItem('admin_email') || 'harsha210108@gmail.com');
-        }
-
-        // 2. Check if OAuth PKCE code is in URL
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        if (code) {
-          setOauthLoading(true);
-          try {
-            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-            if (data?.session?.user) {
-              const email = data.session.user.email || 'harsha210108@gmail.com';
-              sessionStorage.setItem('admin_authenticated', 'true');
-              sessionStorage.setItem('admin_email', email);
-              setIsAuthenticated(true);
-              setCurrentUserEmail(email);
-              window.history.replaceState({}, document.title, window.location.pathname);
-            } else if (error) {
-              console.error('Code exchange error:', error);
-            }
-          } catch (e) {
-            console.error(e);
-          }
-          setOauthLoading(false);
-        }
-      }
-
-      // 3. Check existing Supabase session
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const email = user.email || 'harsha210108@gmail.com';
-          sessionStorage.setItem('admin_authenticated', 'true');
-          sessionStorage.setItem('admin_email', email);
           setIsAuthenticated(true);
-          setCurrentUserEmail(email);
+          setCurrentUserEmail(user.email || '');
+          return;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setIsAuthenticated(true);
+          setCurrentUserEmail(session.user.email || '');
         }
       } catch (err) {
-        console.error('Session error', err);
+        console.error('Session check error', err);
       }
     }
 
     checkSession();
 
-    // 4. Listen to auth state changes
+    // Listen to Supabase auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const email = session.user.email || 'harsha210108@gmail.com';
-        sessionStorage.setItem('admin_authenticated', 'true');
-        sessionStorage.setItem('admin_email', email);
         setIsAuthenticated(true);
-        setCurrentUserEmail(email);
+        setCurrentUserEmail(session.user.email || '');
+      } else {
+        setIsAuthenticated(false);
+        setCurrentUserEmail('');
       }
     });
 
@@ -185,15 +155,11 @@ export default function AdminPage() {
         },
       });
       if (error) {
-        if (error.message?.includes('provider is not enabled')) {
-          setLoginError('Google OAuth is awaiting credentials in Supabase. Please log in with your Admin Email & Password below.');
-        } else {
-          setLoginError(error.message);
-        }
+        setLoginError(error.message);
         setOauthLoading(false);
       }
     } catch (err: any) {
-      setLoginError(err.message || 'Google OAuth failed. Please use email & password.');
+      setLoginError(err.message || 'Google OAuth failed');
       setOauthLoading(false);
     }
   };
@@ -207,24 +173,23 @@ export default function AdminPage() {
       return;
     }
 
-    if (loginPassword.length < 6) {
-      setLoginError('Password must be at least 6 characters');
-      return;
-    }
-
+    setOauthLoading(true);
     try {
-      await supabase.auth.signInWithPassword({
-        email: loginEmail,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
         password: loginPassword,
       });
-    } catch (err) {
-      // Offline fallback handling
-    }
 
-    sessionStorage.setItem('admin_authenticated', 'true');
-    sessionStorage.setItem('admin_email', loginEmail);
-    setIsAuthenticated(true);
-    setCurrentUserEmail(loginEmail);
+      if (error) {
+        setLoginError(error.message);
+      } else if (data?.user) {
+        setIsAuthenticated(true);
+        setCurrentUserEmail(data.user.email || loginEmail);
+      }
+    } catch (err: any) {
+      setLoginError(err.message || 'Authentication failed');
+    }
+    setOauthLoading(false);
   };
 
   // Filter Logic
@@ -454,11 +419,10 @@ export default function AdminPage() {
             </button>
 
             <button
-              onClick={() => {
-                sessionStorage.removeItem('admin_authenticated');
-                sessionStorage.removeItem('admin_email');
-                supabase.auth.signOut();
+              onClick={async () => {
+                await supabase.auth.signOut();
                 setIsAuthenticated(false);
+                setCurrentUserEmail('');
               }}
               className="text-xs font-mono text-accent hover:underline flex items-center gap-1.5 px-3 py-2 cursor-pointer"
             >
@@ -479,7 +443,7 @@ export default function AdminPage() {
               Applicant Tracker &amp; Submissions
             </h2>
             <p className="text-xs font-mono text-ink-muted mt-0.5">
-              Total Logged: {apps.length} • Filtered: {filteredApps.length} • Super Admin: {currentUserEmail || SUPER_ADMIN_EMAIL}
+              Total Logged: {apps.length} • Filtered: {filteredApps.length} • Admin: {currentUserEmail || 'Admin'}
             </p>
           </div>
 

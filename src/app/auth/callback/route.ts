@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') || '/admin';
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+  const next = searchParams.get('next') || '/admin';
 
   if (code) {
     const cookieStore = await cookies();
@@ -23,19 +23,28 @@ export async function GET(request: NextRequest) {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Ignored if server component
+            // Can be ignored if middleware handles it
           }
         },
       },
     });
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
+    if (!error) {
+      const forwardedHost = request.headers.get('x-forwarded-host');
+      const isLocalEnv = process.env.NODE_ENV === 'development';
+      if (isLocalEnv) {
+        return NextResponse.redirect(`${origin}${next}`);
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+      } else {
+        return NextResponse.redirect(`https://webuildnow.in${next}`);
+      }
+    } else {
       console.error('OAuth exchange error:', error);
     }
   }
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin || 'https://webuildnow.in';
+  // Redirect to requested next page
   return NextResponse.redirect(`${origin}${next}`);
 }
-
