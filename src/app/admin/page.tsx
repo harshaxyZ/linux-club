@@ -69,35 +69,90 @@ export default function AdminPage() {
     setMounted(true);
   }, []);
 
-  // Check Supabase session for admin
+  // Check Supabase session for admin & handle PKCE OAuth code
   useEffect(() => {
     async function checkSession() {
       try {
+        // 1. Check if OAuth PKCE code is in URL
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const code = params.get('code');
+          if (code) {
+            setOauthLoading(true);
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              setIsAuthenticated(true);
+              setCurrentUserEmail(data.session.user.email || 'harsha210108@gmail.com');
+              window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (error) {
+              console.error('Code exchange error:', error);
+            }
+            setOauthLoading(false);
+          }
+        }
+
+        // 2. Check existing session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setIsAuthenticated(true);
-          setCurrentUserEmail(session.user.email || 'Admin');
+          setCurrentUserEmail(session.user.email || 'harsha210108@gmail.com');
         }
       } catch (err) {
         console.error('Session error', err);
+        setOauthLoading(false);
       }
     }
+
     checkSession();
+
+    // 3. Listen to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setCurrentUserEmail(session.user.email || 'harsha210108@gmail.com');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Load applications from localStorage
+  // Load applications from Supabase + localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('club_applications');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setApps(parsed);
-          if (parsed.length > 0) setSelectedApp(parsed[0]);
-        } catch (e) {
-          console.error(e);
+    async function loadApps() {
+      let allApps: Application[] = [];
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('club_applications');
+        if (stored) {
+          try {
+            allApps = JSON.parse(stored);
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
+
+      // Fetch live applications from Supabase
+      try {
+        const { data, error } = await supabase
+          .from('applications')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (data && data.length > 0) {
+          const dbIds = new Set(data.map((d: any) => d.id || d.usn));
+          const localFiltered = allApps.filter((a) => !dbIds.has(a.id || a.usn));
+          allApps = [...data, ...localFiltered];
+        }
+      } catch (dbErr) {
+        console.error('Failed to load apps from Supabase:', dbErr);
+      }
+
+      setApps(allApps);
+      if (allApps.length > 0) setSelectedApp(allApps[0]);
+    }
+
+    if (isAuthenticated) {
+      loadApps();
     }
   }, [isAuthenticated]);
 
@@ -292,38 +347,6 @@ export default function AdminPage() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
               <span>{oauthLoading ? 'Redirecting to Google...' : 'Continue with Google Admin'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={async () => {
-                setOauthLoading(true);
-                setLoginError('');
-                try {
-                  const { error } = await supabase.auth.signInWithOAuth({
-                    provider: 'github',
-                    options: {
-                      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined,
-                    },
-                  });
-                  if (error) {
-                    if (error.message?.includes('provider is not enabled')) {
-                      setLoginError('GitHub OAuth is awaiting credentials in Supabase. Please use Admin Email & Password below.');
-                    } else {
-                      setLoginError(error.message);
-                    }
-                    setOauthLoading(false);
-                  }
-                } catch (err: any) {
-                  setLoginError(err.message || 'GitHub OAuth failed');
-                  setOauthLoading(false);
-                }
-              }}
-              disabled={oauthLoading}
-              className="w-full flex items-center justify-center gap-3 bg-[#171717] hover:bg-[#262626] text-white font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-white/10"
-            >
-              <ExternalLink className="w-4 h-4 text-white" />
-              <span>{oauthLoading ? 'Redirecting to GitHub...' : 'Continue with GitHub Admin'}</span>
             </button>
           </div>
 

@@ -49,6 +49,28 @@ export default function ApplyPage() {
   useEffect(() => {
     async function initSession() {
       try {
+        // 1. Check if returning with OAuth PKCE code
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const code = params.get('code');
+          if (code) {
+            setAuthLoading(true);
+            const { data } = await supabase.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              setCurrentUser(data.session.user);
+              if (data.session.user.user_metadata?.full_name && !fullName) {
+                setFullName(data.session.user.user_metadata.full_name);
+              }
+              if (data.session.user.email) {
+                setEmail(data.session.user.email);
+                setAuthEmail(data.session.user.email);
+              }
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            setAuthLoading(false);
+          }
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setCurrentUser(session.user);
@@ -74,9 +96,25 @@ export default function ApplyPage() {
         }
       } catch (err) {
         console.error('Session init error', err);
+        setAuthLoading(false);
       }
     }
     initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
+        if (session.user.user_metadata?.full_name && !fullName) {
+          setFullName(session.user.user_metadata.full_name);
+        }
+        if (session.user.email) {
+          setEmail(session.user.email);
+          setAuthEmail(session.user.email);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const addExtraLink = () => {
@@ -750,16 +788,6 @@ export default function ApplyPage() {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                   <span>{authLoading ? 'Connecting to Google...' : 'Continue with Google Account'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOAuthSignIn('github')}
-                  disabled={authLoading}
-                  className="w-full flex items-center justify-center gap-3 bg-[#171717] hover:bg-[#262626] text-white font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-white/10"
-                >
-                  <Github className="w-4 h-4 text-white" />
-                  <span>{authLoading ? 'Connecting to GitHub...' : 'Continue with GitHub Profile'}</span>
                 </button>
               </div>
             )}
