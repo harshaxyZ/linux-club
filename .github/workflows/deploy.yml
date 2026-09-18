@@ -8,44 +8,9 @@ on:
 
 jobs:
   deploy:
+    name: Trigger Vercel Deploy Hook
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Clean Vercel State
-        run: rm -rf .vercel
-
-      - name: Pull Vercel Environment Information
+      - name: Send Deploy Trigger to Vercel
         run: |
-          vercel pull \
-            --yes \
-            --environment=production \
-            --token="$VERCEL_TOKEN" \
-            --scope="$VERCEL_ORG_ID"
-
-      - name: Build Project Artifacts
-        run: |
-          vercel build \
-            --prod \
-            --token="$VERCEL_TOKEN" \
-            --scope="$VERCEL_ORG_ID"
-
-      - name: Deploy Project Artifacts to Vercel
-        run: |
-          vercel deploy \
-            --prebuilt \
-            --prod \
-            --token="$VERCEL_TOKEN" \
-            --scope="$VERCEL_ORG_ID"
+          curl -X POST -s -S "${{ secrets.VERCEL_DEPLOY_HOOK }}"
