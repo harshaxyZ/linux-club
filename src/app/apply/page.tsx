@@ -210,12 +210,12 @@ export default function ApplyPage() {
     }
   };
 
-  const handleOAuthSignIn = async () => {
+  const handleOAuthSignIn = async (provider: 'google' | 'github') => {
     setAuthLoading(true);
     setAuthError('');
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: {
           redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/apply` : undefined,
         },
@@ -223,7 +223,7 @@ export default function ApplyPage() {
 
       if (error) {
         if (error.message?.includes('provider is not enabled')) {
-          setAuthError('Google OAuth is pending Client ID in Supabase console. You can submit instantly with Password or Magic Link below.');
+          setAuthError(`${provider === 'google' ? 'Google' : 'GitHub'} OAuth is awaiting credentials in Supabase. You can submit instantly with Password or Magic Link below.`);
         } else {
           setAuthError(error.message);
         }
@@ -231,7 +231,7 @@ export default function ApplyPage() {
         setAuthLoading(false);
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Google authentication failed');
+      setAuthError(err.message || 'Authentication failed');
       setAuthMethod('password');
       setAuthLoading(false);
     }
@@ -734,12 +734,12 @@ export default function ApplyPage() {
               </button>
             </div>
 
-            {/* Tab 1: Google OAuth */}
+            {/* Tab 1: OAuth Authentication (Google & GitHub) */}
             {authMethod === 'google' && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={handleOAuthSignIn}
+                  onClick={() => handleOAuthSignIn('google')}
                   disabled={authLoading}
                   className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#EDEDED] text-black font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-border"
                 >
@@ -750,6 +750,16 @@ export default function ApplyPage() {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                   <span>{authLoading ? 'Connecting to Google...' : 'Continue with Google Account'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleOAuthSignIn('github')}
+                  disabled={authLoading}
+                  className="w-full flex items-center justify-center gap-3 bg-[#171717] hover:bg-[#262626] text-white font-semibold text-xs py-3.5 px-4 rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer border border-white/10"
+                >
+                  <Github className="w-4 h-4 text-white" />
+                  <span>{authLoading ? 'Connecting to GitHub...' : 'Continue with GitHub Profile'}</span>
                 </button>
               </div>
             )}
