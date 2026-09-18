@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       const resend = new Resend(resendApiKey);
-      const adminEmail = process.env.ADMIN_EMAIL || 'admin@linuxossclub.org';
+      const adminEmail = process.env.ADMIN_EMAIL || 'harsha210108@gmail.com';
 
       // Send Alert Email to Admin
       await resend.emails.send({

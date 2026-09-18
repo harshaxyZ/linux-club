@@ -39,7 +39,7 @@ interface Application {
   created_at: string;
 }
 
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@linuxossclub.org';
+const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'harsha210108@gmail.com';
 
 export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
