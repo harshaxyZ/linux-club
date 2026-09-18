@@ -1,0 +1,14 @@
+- name: Test Vercel Configuration
+  run: |
+    echo "Testing Vercel authentication..."
+    vercel whoami --token="$VERCEL_TOKEN"
+
+    echo "Project ID:"
+    echo "$VERCEL_PROJECT_ID"
+
+    echo "Org ID:"
+    echo "$VERCEL_ORG_ID"
+  env:
+    VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
