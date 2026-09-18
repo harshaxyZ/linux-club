@@ -1,14 +1,26 @@
-- name: Test Vercel Configuration
-  run: |
-    echo "Testing Vercel authentication..."
-    vercel whoami --token="$VERCEL_TOKEN"
+name: Test Vercel Token
 
-    echo "Project ID:"
-    echo "$VERCEL_PROJECT_ID"
+on:
+workflow_dispatch:
 
-    echo "Org ID:"
-    echo "$VERCEL_ORG_ID"
-  env:
-    VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+jobs:
+test:
+runs-on: ubuntu-latest
+
+steps:
+  - name: Install Vercel CLI
+    run: npm install --global vercel@latest
+
+  - name: Test Vercel Authentication
+    run: |
+      vercel whoami --token="$VERCEL_TOKEN"
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+  - name: Check Project Configuration
+    run: |
+      echo "Project ID configured: $([ -n "$VERCEL_PROJECT_ID" ] && echo YES || echo NO)"
+      echo "Org ID configured: $([ -n "$VERCEL_ORG_ID" ] && echo YES || echo NO)"
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
