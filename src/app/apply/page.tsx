@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
+import { exchangeCodeOnClient } from '../../lib/auth-client';
 import type { User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -43,23 +44,44 @@ export default function ApplyPage() {
   const [extraLinks, setExtraLinks] = useState<ExtraLink[]>([]);
   const [aboutText, setAboutText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [consent, setConsent] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     async function init() {
+      let sessionUser = null;
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
-        if (err === 'exchange') {
-          setPageError('Google sign-in reached us but the session could not be completed. Check the server log for "OAuth exchange error", then try again or use an email code.');
-        } else if (err) {
-          setPageError('Sign-in did not complete. Please try again or use an email code.');
+        const code = params.get('code');
+
+        // Fallback: server exchange failed but the browser holds the PKCE
+        // verifier, so retry the exchange client-side before giving up.
+        if (code) {
+          const clientError = await exchangeCodeOnClient(supabase, code);
+          if (clientError) {
+            console.error('Client code exchange failed:', clientError);
+          } else {
+            const { data: { session: exSession } } = await supabase.auth.getSession();
+            sessionUser = exSession?.user ?? null;
+          }
         }
-        if (err) window.history.replaceState({}, document.title, window.location.pathname);
+
+        if (!sessionUser) {
+          if (err === 'exchange') {
+            setPageError('Google sign-in reached us but the session could not be completed. Check the server log for "OAuth exchange error", then try again or use an email code.');
+          } else if (err) {
+            setPageError('Sign-in did not complete. Please try again or use an email code.');
+          }
+        }
+        if (err || code) window.history.replaceState({}, document.title, window.location.pathname);
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      const u = session?.user ?? null;
+      if (!sessionUser) {
+        const { data: { session } } = await supabase.auth.getSession();
+        sessionUser = session?.user ?? null;
+      }
+      const u = sessionUser;
       setUser(u);
       if (u) {
         // Prefill from Google profile; user can still edit everything.
@@ -125,6 +147,10 @@ export default function ApplyPage() {
       setErrorMsg('Tell us a bit more (min 20 characters).');
       return;
     }
+    if (!consent) {
+      setErrorMsg('Please tick the box to accept the Privacy Policy and Terms.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -135,7 +161,7 @@ export default function ApplyPage() {
           fullName, year, section, usn,
           course: course === 'Others' ? courseOther : course,
           courseOther, email, phone: cleanPhone,
-          githubUrl, linkedinUrl, extraLinks, aboutText,
+          githubUrl, linkedinUrl, extraLinks, aboutText, consent,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -337,6 +363,21 @@ export default function ApplyPage() {
                     className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink resize-none focus:outline-none focus:border-accent" />
                   <div className="text-right text-[10px] font-mono text-ink-muted mt-1">{aboutText.length} / 1000</div>
                 </div>
+                <label className="flex items-start gap-2.5 text-xs text-ink-muted leading-relaxed cursor-pointer select-none bg-subsurface border border-border rounded-xl p-4">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <Link href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</Link>
+                    {' '}and{' '}
+                    <Link href="/terms" target="_blank" className="text-accent hover:underline">Terms &amp; Conditions</Link>
+                    {' '}and consent to my details being reviewed for membership. *
+                  </span>
+                </label>
                 <button type="submit" disabled={loading}
                   className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold uppercase tracking-wider py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 cursor-pointer">
                   {loading ? 'Submitting…' : 'Submit Application →'}

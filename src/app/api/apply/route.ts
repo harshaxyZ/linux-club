@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
     const linkedinUrl = String(data.linkedinUrl ?? '').trim();
     const aboutText = String(data.aboutText ?? '').trim();
     const extraLinks = Array.isArray(data.extraLinks) ? data.extraLinks : [];
+    const consent = data.consent === true;
+
+    if (!consent) return bad('Privacy Policy and Terms acceptance required.');
 
     if (!fullName || fullName.length < 3 || fullName.length > 100) return bad('Full name is required (3–100 chars).');
     if (!YEARS.includes(year)) return bad('Valid academic year required.');
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest) {
         ${linkedinUrl ? `<p><strong>LinkedIn:</strong> ${e(linkedinUrl)}</p>` : ''}
         ${extraRows}
         <p><strong>Statement:</strong></p><p style="color:#A3A3A3;">${e(aboutText)}</p>
-        <p style="font-size:12px;color:#737373;">Review: ${e(env.appUrl)}/admin</p>
+        <p style="font-size:12px;color:#737373;">Consent: privacy + terms accepted at submission • Review: ${e(env.appUrl)}/admin</p>
       </div>`;
 
     const applicantHtml = `

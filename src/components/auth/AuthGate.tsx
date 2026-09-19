@@ -20,14 +20,27 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   const supabase = createClient();
 
   const getDeviceId = (): string => getOrCreateDeviceId();
 
+  const needConsent = () => {
+    if (!agreed) {
+      setError('Please tick the box to accept the Privacy Policy and Terms first.');
+      return false;
+    }
+    return true;
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     setError('');
+    if (!needConsent()) {
+      setLoading(false);
+      return;
+    }
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -53,6 +66,10 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
     setLoading(true);
     setError('');
     setInfo('');
+    if (!needConsent()) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -116,6 +133,20 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
 
       {mode === 'choose' ? (
         <div className="space-y-3">
+          <label className="flex items-start gap-2.5 text-xs text-ink-muted leading-relaxed cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+            />
+            <span>
+              I agree to the{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="text-accent hover:underline">Privacy Policy</a>
+              {' '}and{' '}
+              <a href="/terms" target="_blank" rel="noreferrer" className="text-accent hover:underline">Terms &amp; Conditions</a>.
+            </span>
+          </label>
           <button
             type="button"
             onClick={handleGoogle}
@@ -152,6 +183,20 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
               className="w-full px-4 py-3 rounded-xl border border-border bg-surface text-xs text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-accent"
             />
           </div>
+          <label className="flex items-start gap-2.5 text-xs text-ink-muted leading-relaxed cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+            />
+            <span>
+              I agree to the{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="text-accent hover:underline">Privacy Policy</a>
+              {' '}and{' '}
+              <a href="/terms" target="_blank" rel="noreferrer" className="text-accent hover:underline">Terms &amp; Conditions</a>.
+            </span>
+          </label>
           <button
             type="submit"
             disabled={loading}

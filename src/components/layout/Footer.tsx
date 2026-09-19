@@ -59,7 +59,11 @@ export function Footer() {
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ink-muted font-mono">
           <p>© {new Date().getFullYear()} {SITE.shortName}, {SITE.college}.</p>
-          <p className="opacity-80">Ubuntu-first • GitHub • Monthly evaluation</p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-ink transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink transition-colors">Terms</Link>
+            <span className="opacity-80">Ubuntu-first • GitHub</span>
+          </div>
         </div>
       </div>
     </footer>

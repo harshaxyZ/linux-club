@@ -48,7 +48,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Surface the failure to the UI instead of looping silently.
+  // Forward the code so the browser (which holds the PKCE verifier) can retry.
   const failUrl = new URL(next, origin);
   failUrl.searchParams.set('error', code ? 'exchange' : 'oauth');
+  if (code) failUrl.searchParams.set('code', code);
   return NextResponse.redirect(failUrl);
 }

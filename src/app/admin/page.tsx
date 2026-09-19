@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
+import { exchangeCodeOnClient } from '../../lib/auth-client';
 import { useTheme } from '../../components/theme/ThemeProvider';
 
 export const dynamic = 'force-dynamic';
@@ -59,13 +60,21 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function init() {
+      let exchanged = false;
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
-        if (err) {
-          setPageError('Google sign-in did not complete. Check the server log, then try again or use an email code.');
-          window.history.replaceState({}, document.title, window.location.pathname);
+        const code = params.get('code');
+        // Fallback: retry a failed server exchange client-side (PKCE verifier).
+        if (code) {
+          const clientError = await exchangeCodeOnClient(supabase, code);
+          exchanged = !clientError;
+          if (clientError) console.error('Client code exchange failed:', clientError);
         }
+        if (!exchanged && err) {
+          setPageError('Google sign-in did not complete. Check the server log, then try again or use an email code.');
+        }
+        if (err || code) window.history.replaceState({}, document.title, window.location.pathname);
       }
       const { data: { session } } = await supabase.auth.getSession();
       const u = session?.user;
