@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser, isAdmin } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { emailChannels, sendEmail } from '@/lib/email';
+import { emailLayout, emailMuted, emailParagraph } from '@/lib/email-template';
 import { escapeHtml, getClientIp, isValidEmail, normalizeEmail } from '@/lib/security';
 import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
@@ -34,58 +35,81 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Valid email required.' }, { status: 400, headers: NO_STORE });
   }
 
-  const e = escapeHtml;
-  try {
-    const result = await sendEmail({
-      to: email,
-      subject: 'Admin invitation - Linux OpenSource Club',
-      html: `
-        <div style="font-family: monospace; background:#0B0E14; color:#F1F5F9; padding:24px; border-radius:12px;">
-          <h2 style="color:#E11D48;">Admin invitation</h2>
-          <p>${e(user.email ?? 'An admin')} invited you (${e(email)}) to the Linux OpenSource Club admin console.</p>
-          <p>Sign in with Google or an email code using this exact address:</p>
-          <p><a href="${e(env.appUrl)}/admin" style="color:#E11D48;">${e(env.appUrl)}/admin</a></p>
-          <p style="color:#64748B;font-size:12px;">If this was not expected, ignore this email. Ask an existing reviewer for access.</p>
-        </div>`,
-    });
-    console.log(`Invite delivered by ${result.channel}`);
-  } catch (err) {
-    // Admin-only route, so the response can name the failure: a bare 502 sent
-    // reviewers hunting through logs for what is nearly always a provider-side
-    // sender-verification problem.
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('Invite email failed on every channel:', message);
-    const configured = emailChannels().map((c) => c.id);
+  const supabase = adminClient();
+
+  // Grant access first. This used to only send an email and write an
+  // admin_invitations row, so the invitee was never actually an admin and hit
+  // "Access denied" on sign-in: isAdmin() looks at ADMIN_EMAILS and public.admins,
+  // neither of which the old flow touched.
+  const { data: inviter } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('email', (user.email ?? '').trim().toLowerCase())
+    .maybeSingle();
+
+  const { error: grantError } = await supabase
+    .from('admins')
+    .upsert({ email, invited_by: inviter?.id ?? null }, { onConflict: 'email' });
+
+  if (grantError) {
+    console.error('Granting reviewer access failed:', grantError.message);
     return NextResponse.json(
-      {
-        error:
-          configured.length === 0
-            ? 'No email provider is configured on this deployment. Add RESEND_API_KEYS or SMTP_* to the hosting environment.'
-            : `Email delivery failed on every channel (${configured.join(', ')}). Last error: ${message.slice(0, 200)}`,
-        channels: configured,
-      },
-      { status: configured.length === 0 ? 500 : 502, headers: NO_STORE }
+      { error: 'Could not grant reviewer access. Check that the admins table exists.' },
+      { status: 500, headers: NO_STORE }
     );
   }
 
-  try {
-    const supabase = adminClient();
-    const { data: inviter } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (inviter) {
+  // Best-effort audit trail; requires the inviter to exist in admins.
+  if (inviter) {
+    try {
       await supabase.from('admin_invitations').insert({
         email,
         token: crypto.randomUUID(),
         invited_by: inviter.id,
         expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
       });
+    } catch {
+      // The grant above is what matters.
     }
-  } catch {
-    // invitation record is best-effort; email already sent
   }
 
-  return NextResponse.json({ success: true }, { headers: NO_STORE });
+  const e = escapeHtml;
+  const html = emailLayout({
+    title: 'You now have reviewer access',
+    preheader: 'Your address was added to the Linux OSS Club admin console.',
+    bodyHtml: [
+      emailParagraph(`${e(user.email ?? 'A club organiser')} added <strong>${e(email)}</strong> to the Linux OSS Club admin console.`),
+      emailParagraph('Sign in with Google or an email code using this exact address. Any other address will be refused.'),
+      emailMuted('Applicant records are personal data. Please do not export or share them outside the core team.'),
+    ].join(''),
+    cta: { label: 'Open the console', url: `${env.appUrl}/admin` },
+    note: 'If you were not expecting this, tell the person above: access can be removed at any time.',
+  });
+
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: 'Reviewer access - Linux OpenSource Club',
+      html,
+    });
+    console.log(`Invite delivered by ${result.channel}`);
+    return NextResponse.json({ success: true, emailDelivered: true }, { headers: NO_STORE });
+  } catch (err) {
+    // Access was already granted, so this is a notification failure, not a
+    // failed invite. Say so instead of implying nothing happened.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Invite email failed on every channel:', message);
+    const configured = emailChannels().map((c) => c.id);
+    return NextResponse.json(
+      {
+        success: true,
+        emailDelivered: false,
+        warning:
+          configured.length === 0
+            ? `${email} now has reviewer access, but no email provider is configured on this deployment, so no notification was sent.`
+            : `${email} now has reviewer access, but the notification email failed on every channel (${configured.join(', ')}). Last error: ${message.slice(0, 160)}`,
+      },
+      { headers: NO_STORE }
+    );
+  }
 }

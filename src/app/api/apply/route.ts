@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email';
+import { emailDetailTable, emailLayout, emailMuted, emailParagraph, emailQuote } from '@/lib/email-template';
 import {
   escapeHtml,
   getClientIp,
@@ -177,32 +178,54 @@ export async function POST(req: NextRequest) {
     }
 
     const e = escapeHtml;
-    const extraRows = cleanExtra
+    const extraRows: Array<[string, string]> = cleanExtra
       .filter((l: { url: string }) => l.url)
-      .map((l: { label: string; url: string }) => `<p style="margin:6px 0;"><strong>${e(l.label)}:</strong> ${e(l.url)}</p>`)
-      .join('');
+      .map((l: { label: string; url: string }) => [e(l.label), `<a href="${e(l.url)}" style="color:#E11D48;">${e(l.url)}</a>`] as [string, string]);
 
-    const adminHtml = `
-      <div style="font-family: monospace; background:#050505; color:#fff; padding:24px; border-radius:12px;">
-        <h2 style="color:#E11D48;">New application: ${e(fullName)} (${e(usn)})</h2>
-        <p><strong>Year:</strong> ${e(year)} (Sec ${e(section)}) - <strong>Branch:</strong> ${e(course)}</p>
-        <p><strong>${e(idLabel)}:</strong> ${e(usn)}</p>
-        <p><strong>Email:</strong> ${e(authEmail)} - <strong>Phone:</strong> ${e(phone)}</p>
-        <p><strong>GitHub:</strong> ${githubUrl ? e(githubUrl) : 'not provided'}</p>
-        ${linkedinUrl ? `<p><strong>LinkedIn:</strong> ${e(linkedinUrl)}</p>` : ''}
-        ${languages.length > 0 ? `<p><strong>Languages:</strong> ${e(languages.join(', '))}</p>` : ''}
-        ${extraRows}
-        <p><strong>Statement:</strong></p><p style="color:#A3A3A3;">${e(aboutText)}</p>
-        <p style="font-size:12px;color:#737373;">Consent: privacy + terms accepted at submission - Review: ${e(env.appUrl)}/admin</p>
-      </div>`;
+    const adminHtml = emailLayout({
+      title: `New application: ${e(fullName)}`,
+      preheader: `${e(fullName)} (${e(year)} year, ${e(course)}) applied to the club.`,
+      bodyHtml: [
+        emailDetailTable([
+          ['Name', e(fullName)],
+          [idLabel, e(usn)],
+          ['Year', `${e(year)} year, section ${e(section)}`],
+          ['Branch', e(course)],
+          ['Email', `<a href="mailto:${e(authEmail)}" style="color:#E11D48;">${e(authEmail)}</a>`],
+          ['Phone', `<a href="tel:${e(phone)}" style="color:#E11D48;">${e(phone)}</a>`],
+          ['GitHub', githubUrl ? `<a href="${e(githubUrl)}" style="color:#E11D48;">${e(githubUrl)}</a>` : 'not provided'],
+          ...(linkedinUrl
+            ? ([['LinkedIn', `<a href="${e(linkedinUrl)}" style="color:#E11D48;">${e(linkedinUrl)}</a>`]] as Array<[string, string]>)
+            : []),
+          ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
+          ...extraRows,
+        ]),
+        emailMuted('Statement of intent'),
+        emailQuote(e(aboutText)),
+      ].join(''),
+      cta: { label: 'Review in console', url: `${env.appUrl}/admin` },
+      note: 'Privacy Policy and Terms were accepted at submission.',
+    });
 
-    const applicantHtml = `
-      <div style="font-family: monospace; background:#050505; color:#fff; padding:24px; border-radius:12px;">
-        <h2 style="color:#E11D48;">Application received</h2>
-        <p>Hey ${e(fullName)},</p>
-        <p>We received your Linux OpenSource Club application (USN ${e(usn)}). The core team reviews every application after the registration drive and will reach out on your registered email.</p>
-        <p style="color:#737373;">Daily sessions: ${e('4:00 PM - 6:00 PM')}, Lab A-306 / A-228. Join Discord for updates.</p>
-      </div>`;
+    const applicantHtml = emailLayout({
+      title: 'Application received',
+      preheader: 'We have your Linux OSS Club application. Here is what happens next.',
+      bodyHtml: [
+        emailParagraph(`Hey ${e(fullName)},`),
+        emailParagraph(
+          `We received your Linux OpenSource Club application (${e(idLabel)} ${e(usn)}). The core team reviews every application after the registration drive closes, and we will reach out on this email address.`
+        ),
+        emailDetailTable([
+          [idLabel, e(usn)],
+          ['Year', `${e(year)} year, section ${e(section)}`],
+          ['Branch', e(course)],
+          ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
+        ]),
+        emailMuted('Nothing else is needed from you right now. Sessions run 4:00 PM to 6:00 PM on working days in Lab A-306 / A-228, and announcements go out on Discord.'),
+      ].join(''),
+      cta: { label: 'View your application', url: `${env.appUrl}/account` },
+      note: 'You can withdraw your application at any time from the account page.',
+    });
 
     const admins = env.adminEmails;
     try {

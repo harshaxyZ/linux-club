@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import nodemailer, { type Transporter } from 'nodemailer';
 import { env } from './env';
+import { emailCodeBlock, emailLayout, emailMuted, emailParagraph } from './email-template';
 
 interface SendEmailArgs {
   to: string | string[];
@@ -239,12 +240,14 @@ function logActionableHint(kind: ChannelKind, err: unknown): void {
 }
 
 export function otpEmailHtml(code: string): string {
-  return `
-    <div style="font-family: monospace; background-color: #0B0E14; color: #F1F5F9; padding: 24px; border-radius: 12px;">
-      <h2 style="color: #E11D48;">// Linux OSS Club - Sign in</h2>
-      <p>Your one-time passcode is:</p>
-      <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px;">${code}</p>
-      <p style="color: #94A3B8;">Valid for 10 minutes. Never share this code.</p>
-    </div>
-  `;
+  return emailLayout({
+    title: 'Your sign-in code',
+    preheader: `${code} is your Linux OSS Club sign-in code. Valid for 10 minutes.`,
+    bodyHtml: [
+      emailParagraph('Enter this one-time passcode to finish signing in:'),
+      emailCodeBlock(code),
+      emailMuted('Valid for 10 minutes. It can only be used once.'),
+    ].join(''),
+    note: 'If you did not request this code, ignore this email. Never share it with anyone, including club organisers.',
+  });
 }

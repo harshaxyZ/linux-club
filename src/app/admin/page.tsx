@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteDone, setInviteDone] = useState(false);
+  const [inviteWarning, setInviteWarning] = useState('');
   const [actionError, setActionError] = useState('');
   const [pageError, setPageError] = useState('');
   const [statsKey, setStatsKey] = useState(0);
@@ -171,22 +172,26 @@ export default function AdminPage() {
   const sendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setInviteLoading(true);
+    setActionError('');
+    setInviteWarning('');
     try {
       const res = await fetch('/api/admin/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...deviceHeaders() },
         body: JSON.stringify({ email: inviteEmail }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setActionError(data.error || 'Invite failed.');
       } else {
+        // Access is granted even when the notification email fails.
+        if (data.warning) setInviteWarning(data.warning);
         setInviteDone(true);
         setTimeout(() => {
           setInviteDone(false);
           setInviteOpen(false);
           setInviteEmail('');
-        }, 1500);
+        }, data.warning ? 6000 : 1500);
       }
     } catch {
       setActionError('Network error.');
@@ -394,10 +399,22 @@ export default function AdminPage() {
       {inviteOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
           <div className="minimal-card rounded-3xl p-6 w-full max-w-md">
-            <h3 className="font-heading font-extrabold text-xl">Invite Administrator</h3>
-            <p className="text-xs text-ink-muted mt-1 mb-6">Sends a sign-in link via Resend (Brevo fallback). Permanent access still needs ADMIN_EMAILS.</p>
+            <h3 className="font-heading font-extrabold text-xl">Add Reviewer</h3>
+            <p className="text-xs text-ink-muted mt-1 mb-6">
+              Grants admin console access to this email immediately and sends a notification. They must sign in
+              with this exact address, using Google or an email code.
+            </p>
             {inviteDone ? (
-              <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-mono text-center">Invitation sent.</div>
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-mono text-center">
+                  Reviewer access granted.
+                </div>
+                {inviteWarning && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-mono leading-relaxed">
+                    {inviteWarning}
+                  </div>
+                )}
+              </div>
             ) : (
               <form onSubmit={sendInvite} className="space-y-4">
                 <input type="email" required value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="colleague@example.com"
