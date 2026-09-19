@@ -28,6 +28,9 @@ export const env = {
   get brevoApiKey() {
     return optional('BREVO_API_KEY');
   },
+  get brevoSenderEmail() {
+    return optional('BREVO_SENDER_EMAIL', this.emailFrom);
+  },
   get emailFrom() {
     return optional('EMAIL_FROM', 'Linux OSS Club <onboarding@resend.dev>');
   },

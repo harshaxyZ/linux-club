@@ -12,7 +12,8 @@ async function sendViaBrevo({ to, subject, html }: SendEmailArgs): Promise<void>
   if (!apiKey) throw new Error('BREVO_API_KEY not configured');
 
   const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
-  const from = parseFrom(env.emailFrom);
+  const senderEmail = env.brevoSenderEmail;
+  const from = senderEmail.includes('@') ? parseFrom(senderEmail) : parseFrom(env.emailFrom);
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
