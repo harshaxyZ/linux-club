@@ -8,11 +8,18 @@ interface SendEmailArgs {
   html: string;
 }
 
-export type EmailProvider = 'resend' | 'smtp' | 'brevo';
+export type ChannelKind = 'resend' | 'smtp' | 'brevo';
+
+export interface Channel {
+  /** Stable id used in logs and for pinning, e.g. `resend#2`. */
+  id: string;
+  kind: ChannelKind;
+  send: (args: SendEmailArgs) => Promise<void>;
+}
 
 interface SendResult {
-  provider: EmailProvider;
-  attempts: Array<{ provider: EmailProvider; error?: string }>;
+  channel: string;
+  attempts: Array<{ channel: string; error?: string }>;
 }
 
 function parseFrom(from: string): { name?: string; email: string } {
@@ -25,17 +32,28 @@ function parseFrom(from: string): { name?: string; email: string } {
 
 /* ------------------------------------------------------------------ Resend */
 
-async function sendViaResend({ to, subject, html }: SendEmailArgs): Promise<void> {
-  const resendKey = env.resendApiKey;
-  if (!resendKey) throw new Error('RESEND_API_KEY not configured');
-  const resend = new Resend(resendKey);
-  const { error } = await resend.emails.send({
-    from: env.emailFrom,
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    html,
-  });
-  if (error) throw new Error(error.message);
+/**
+ * One channel per API key. Each key usually belongs to a different Resend
+ * account with a different verified domain, so a per-key From can be supplied
+ * through RESEND_FROMS (positional, falling back to EMAIL_FROM).
+ */
+function resendChannels(): Channel[] {
+  const keys = env.resendApiKeys;
+  const froms = env.resendFroms;
+  return keys.map((key, index) => ({
+    id: keys.length > 1 ? `resend#${index + 1}` : 'resend',
+    kind: 'resend' as const,
+    async send({ to, subject, html }: SendEmailArgs) {
+      const from = froms[index] || env.emailFrom;
+      const { error } = await new Resend(key).emails.send({
+        from,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+      });
+      if (error) throw new Error(error.message);
+    },
+  }));
 }
 
 /* -------------------------------------------------------------------- SMTP */
@@ -44,24 +62,21 @@ let transporter: Transporter | null = null;
 
 /**
  * SMTP transport, used for SMTP2GO (mail.smtp2go.com:2525, or 587/8025/80/25
- * with STARTTLS, 465/8465/443 with implicit TLS). Credentials come from the
- * environment: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS.
- *
- * Reused across invocations because a warm serverless instance can then skip the
- * TLS handshake and AUTH round trip.
+ * with STARTTLS, 465/8465/443 with implicit TLS). Reused across invocations so a
+ * warm serverless instance skips the TLS handshake and AUTH round trip.
  */
 function smtpTransport(): Transporter {
   const { host, port, user, pass } = env.smtp;
   if (!host || !user || !pass) {
-    throw new Error('SMTP_HOST / SMTP_USER / SMTP_PASS not configured');
+    throw new Error('SMTP_HOST / SMTP_USER / SMTP_PASSWORD not configured');
   }
   if (!transporter) {
+    const implicitTls = port === 465 || port === 8465 || port === 443;
     transporter = nodemailer.createTransport({
       host,
       port,
-      // 465, 8465 and 443 are implicit TLS; everything else upgrades via STARTTLS.
-      secure: port === 465 || port === 8465 || port === 443,
-      requireTLS: !(port === 465 || port === 8465 || port === 443),
+      secure: implicitTls,
+      requireTLS: !implicitTls,
       auth: { user, pass },
       pool: true,
       maxConnections: 2,
@@ -73,16 +88,26 @@ function smtpTransport(): Transporter {
   return transporter;
 }
 
-async function sendViaSmtp({ to, subject, html }: SendEmailArgs): Promise<void> {
-  const info = await smtpTransport().sendMail({
-    from: env.smtp.from || env.emailFrom,
-    to: Array.isArray(to) ? to.join(', ') : to,
-    subject,
-    html,
-  });
-  if (info.rejected && info.rejected.length > 0) {
-    throw new Error(`SMTP rejected ${info.rejected.length} recipient(s)`);
-  }
+function smtpChannel(): Channel[] {
+  const { host, user, pass } = env.smtp;
+  if (!host || !user || !pass) return [];
+  return [
+    {
+      id: 'smtp',
+      kind: 'smtp',
+      async send({ to, subject, html }: SendEmailArgs) {
+        const info = await smtpTransport().sendMail({
+          from: env.smtp.from || env.emailFrom,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+          html,
+        });
+        if (info.rejected && info.rejected.length > 0) {
+          throw new Error(`SMTP rejected ${info.rejected.length} recipient(s)`);
+        }
+      },
+    },
+  ];
 }
 
 /** Authenticates against the SMTP server without sending anything. */
@@ -93,126 +118,119 @@ export async function verifySmtp(): Promise<true> {
 
 /* ------------------------------------------------------------------- Brevo */
 
-async function sendViaBrevo({ to, subject, html }: SendEmailArgs): Promise<void> {
+function brevoChannel(): Channel[] {
   const apiKey = env.brevoApiKey;
-  if (!apiKey) throw new Error('BREVO_API_KEY not configured');
+  if (!apiKey) return [];
+  return [
+    {
+      id: 'brevo',
+      kind: 'brevo',
+      async send({ to, subject, html }: SendEmailArgs) {
+        const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
+        const senderEmail = env.brevoSenderEmail;
+        const from = senderEmail.includes('@') ? parseFrom(senderEmail) : parseFrom(env.emailFrom);
 
-  const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
-  const senderEmail = env.brevoSenderEmail;
-  const from = senderEmail.includes('@') ? parseFrom(senderEmail) : parseFrom(env.emailFrom);
+        const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
+          body: JSON.stringify({ sender: from, to: recipients, subject, htmlContent: html }),
+        });
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': apiKey,
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(`Brevo send failed (${res.status}): ${text.slice(0, 300)}`);
+        }
+      },
     },
-    body: JSON.stringify({
-      sender: from,
-      to: recipients,
-      subject,
-      htmlContent: html,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Brevo send failed (${res.status}): ${text.slice(0, 300)}`);
-  }
+  ];
 }
 
 /* ---------------------------------------------------------------- Dispatch */
 
-const SENDERS: Record<EmailProvider, (args: SendEmailArgs) => Promise<void>> = {
-  resend: sendViaResend,
-  smtp: sendViaSmtp,
-  brevo: sendViaBrevo,
-};
-
-function configuredProviders(): EmailProvider[] {
-  const list: EmailProvider[] = [];
-  if (env.resendApiKey) list.push('resend');
-  if (env.smtp.host && env.smtp.user && env.smtp.pass) list.push('smtp');
-  if (env.brevoApiKey) list.push('brevo');
-  return list;
+export function emailChannels(): Channel[] {
+  return [...resendChannels(), ...smtpChannel(), ...brevoChannel()];
 }
 
-// Module-level cursor: spreads sends across providers instead of hammering one
+// Module-level cursor: spreads sends across channels instead of hammering one
 // until it fails. Per-instance on serverless, which is fine -- the goal is load
 // spreading and resilience, not exact fairness.
 let cursor = 0;
 
 /**
- * Providers in the order they should be attempted for this send: a round-robin
- * rotation over everything configured, with PRIMARY_EMAIL_PROVIDER (when set and
- * configured) pinned to the front.
+ * Channels in the order to try for this send: a round-robin rotation over
+ * everything configured, with PRIMARY_EMAIL_PROVIDER (a kind, or an exact channel
+ * id) pinned to the front when it exists.
  */
-export function providerOrder(providers = configuredProviders(), preferred = env.emailPrimary): EmailProvider[] {
-  if (providers.length === 0) return [];
-  const start = cursor++ % providers.length;
-  const rotated = [...providers.slice(start), ...providers.slice(0, start)];
-  if (preferred && providers.includes(preferred)) {
-    return [preferred, ...rotated.filter((p) => p !== preferred)];
-  }
-  return rotated;
+export function channelOrder(channels = emailChannels(), preferred = env.emailPrimary): Channel[] {
+  if (channels.length === 0) return [];
+  const start = cursor++ % channels.length;
+  const rotated = [...channels.slice(start), ...channels.slice(0, start)];
+  if (!preferred) return rotated;
+  const pinned = rotated.filter((c) => c.id === preferred || c.kind === preferred);
+  if (pinned.length === 0) return rotated;
+  return [...pinned, ...rotated.filter((c) => !pinned.includes(c))];
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailArgs): Promise<SendResult> {
-  const order = providerOrder();
+  const order = channelOrder();
   if (order.length === 0) {
     throw new Error(
-      'No email provider is configured. Set RESEND_API_KEY, SMTP_* (SMTP2GO) or BREVO_API_KEY.'
+      'No email provider is configured. Set RESEND_API_KEY(S), SMTP_* (SMTP2GO) or BREVO_API_KEY.'
     );
   }
 
   const attempts: SendResult['attempts'] = [];
   let lastError: unknown = null;
 
-  for (const provider of order) {
+  for (const channel of order) {
     try {
-      await SENDERS[provider]({ to, subject, html });
-      attempts.push({ provider });
-      return { provider, attempts };
+      await channel.send({ to, subject, html });
+      attempts.push({ channel: channel.id });
+      return { channel: channel.id, attempts };
     } catch (err) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
-      attempts.push({ provider, error: message });
-      console.error(`Email via ${provider} failed, trying next provider:`, message);
-      logActionableHint(provider, err);
+      attempts.push({ channel: channel.id, error: message });
+      console.error(`Email via ${channel.id} failed, trying next channel:`, message);
+      logActionableHint(channel.kind, err);
     }
   }
 
   throw lastError instanceof Error
     ? lastError
-    : new Error(`All email providers failed: ${order.join(', ')}`);
+    : new Error(`All email channels failed: ${order.map((c) => c.id).join(', ')}`);
 }
 
-function logActionableHint(provider: EmailProvider, err: unknown): void {
+function logActionableHint(kind: ChannelKind, err: unknown): void {
   const msg = err instanceof Error ? err.message : String(err);
-  if (provider === 'resend' && /testing emails|verify a domain/i.test(msg)) {
+  if (kind === 'resend' && /testing emails|verify a domain|not verified/i.test(msg)) {
     console.error(
-      'HINT: Resend is in test mode (onboarding@resend.dev can only mail the account owner). ' +
-        'Verify a domain at resend.com/domains and set EMAIL_FROM to it.'
+      'HINT: this Resend key can only mail its own account owner until a domain is verified. ' +
+        'Verify the domain at resend.com/domains, then make sure the matching entry in RESEND_FROMS ' +
+        '(or EMAIL_FROM) uses that domain.'
     );
   }
-  if (provider === 'brevo' && /authorised_ips|IP address|unrecognised IP/i.test(msg)) {
+  if (kind === 'resend' && /API key is invalid|unauthorized|401/i.test(msg)) {
+    console.error('HINT: a Resend key in RESEND_API_KEYS is invalid or revoked. Rotate it and update the env var.');
+  }
+  if (kind === 'brevo' && /authorised_ips|IP address|unrecognised IP/i.test(msg)) {
     console.error(
       'HINT: Brevo rejected this server IP, which is expected on serverless where the egress IP ' +
         'changes. Authorize the range at app.brevo.com/security/authorised_ips, disable IP ' +
-        'restriction for the key, or rely on the SMTP2GO and Resend providers instead.'
+        'restriction for the key, or rely on the other channels.'
     );
   }
-  if (provider === 'smtp' && /sender domain not verified|550/i.test(msg)) {
+  if (kind === 'smtp' && /sender domain not verified|550/i.test(msg)) {
     console.error(
       'HINT: SMTP2GO accepted the login but refuses the From domain. Add it under ' +
         'Sending > Verified Senders in SMTP2GO and publish the CNAME/DKIM records it gives you, ' +
         'or point SMTP_FROM at an address on a domain that is already verified there.'
     );
   }
-  if (provider === 'smtp' && /invalid login|535|534|authentication/i.test(msg)) {
+  if (kind === 'smtp' && /invalid login|535|534|authentication/i.test(msg)) {
     console.error('HINT: SMTP_USER / SMTP_PASSWORD rejected by the SMTP server. Re-check the SMTP2GO user.');
   }
-  if (provider === 'smtp' && /timeout|ETIMEDOUT|ECONNREFUSED/i.test(msg)) {
+  if (kind === 'smtp' && /timeout|ETIMEDOUT|ECONNREFUSED/i.test(msg)) {
     console.error(
       'HINT: SMTP connection blocked. Try SMTP_PORT=2525 (SMTP2GO alternative) or 587; some hosts ' +
         'block outbound 25.'

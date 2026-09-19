@@ -1,14 +1,23 @@
+import { cleanEnvValue } from './env-value';
+
+/**
+ * Every read goes through cleanEnvValue: this project has already been bitten by
+ * a UTF-8 BOM in NEXT_PUBLIC_SUPABASE_URL and by an EMAIL_FROM wrapped in literal
+ * double quotes (Resend answers 422 "Invalid `from` field" for that). Local
+ * dotenv strips quotes, hosting dashboards do not, so the difference only shows
+ * up in production.
+ */
 function required(name: string): string {
-  const v = process.env[name];
-  if (!v || v.trim() === '') {
+  const v = cleanEnvValue(process.env[name]);
+  if (!v) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return v;
 }
 
 function optional(name: string, fallback = ''): string {
-  const v = process.env[name];
-  if (!v || v.trim() === '') return fallback;
+  const v = cleanEnvValue(process.env[name]);
+  if (!v) return fallback;
   return v;
 }
 
@@ -41,6 +50,34 @@ export const env = {
   get resendApiKey() {
     return optional('RESEND_API_KEY');
   },
+  /**
+   * Every Resend key that should take part in the rotation. Accepts a
+   * comma-separated RESEND_API_KEYS plus the single RESEND_API_KEY, de-duplicated.
+   * Multiple keys mean multiple accounts/quotas, so one exhausted or suspended
+   * key no longer stops sign-in codes.
+   */
+  get resendApiKeys(): string[] {
+    const many = optional('RESEND_API_KEYS')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    const single = optional('RESEND_API_KEY').trim();
+    return [...new Set([...many, ...(single ? [single] : [])])];
+  },
+  /**
+   * Optional per-key From addresses, positionally matched to RESEND_API_KEYS.
+   * Needed because each Resend account verifies its own domain: key 1 may only
+   * send as @webuildnow.in while key 2 may only send as @quilonix.in.
+   */
+  get resendFroms(): string[] {
+    const list = optional('RESEND_FROMS')
+      .split(',')
+      .map((f) => f.trim())
+      .filter(Boolean);
+    if (list.length > 0) return list;
+    const composed = this.emailFrom;
+    return composed ? [composed] : [];
+  },
   get brevoApiKey() {
     return optional('BREVO_API_KEY');
   },
@@ -63,17 +100,27 @@ export const env = {
       from: optional('SMTP_FROM'),
     };
   },
+  /**
+   * Sender header. EMAIL_FROM wins; otherwise it is composed from
+   * FROM_NAME + FROM_EMAIL, which is how the Resend dashboard hands them over.
+   */
   get emailFrom() {
-    return optional('EMAIL_FROM', 'Linux OSS Club <onboarding@resend.dev>');
+    const explicit = optional('EMAIL_FROM');
+    if (explicit) return explicit;
+    const address = optional('FROM_EMAIL');
+    if (address) {
+      const name = optional('FROM_NAME');
+      return name ? `${name} <${address}>` : address;
+    }
+    return 'Linux OSS Club <onboarding@resend.dev>';
   },
   /**
-   * Optional pin for the first provider to try. Unset means pure round-robin
-   * across everything configured.
+   * Optional pin for the first channel to try: a kind (`resend`, `smtp`,
+   * `brevo`) or an exact channel id (`resend#2`). Unset means pure round-robin.
    */
-  get emailPrimary(): 'resend' | 'smtp' | 'brevo' | null {
-    const raw = optional('PRIMARY_EMAIL_PROVIDER').toLowerCase();
-    if (raw === 'brevo' || raw === 'smtp' || raw === 'resend') return raw;
-    return null;
+  get emailPrimary(): string | null {
+    const raw = optional('PRIMARY_EMAIL_PROVIDER').trim().toLowerCase();
+    return raw || null;
   },
   get appUrl() {
     return optional('NEXT_PUBLIC_APP_URL', 'https://webuildnow.in');
