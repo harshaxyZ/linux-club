@@ -38,3 +38,45 @@ export async function findApplicationFor<T extends Record<string, unknown> = Rec
   }
   return null;
 }
+
+/**
+ * Finds an application belonging to someone else that reuses an identifier.
+ *
+ * A student who applies, then signs in with a second email and submits the same
+ * USN or mobile number, is applying twice. This is what catches that. It is
+ * deliberately a refusal rather than a merge: a USN is printed on every
+ * assignment and is not proof of identity, so adopting a row on the strength of
+ * one would let anybody claim another student's application.
+ */
+export async function findDuplicateApplicant(
+  supabase: SupabaseClient,
+  { usn, phone, excludeId }: { usn: string; phone: string; excludeId: string | null }
+): Promise<{ field: 'usn' | 'phone'; email: string } | null> {
+  const checks: Array<{ field: 'usn' | 'phone'; column: string; value: string }> = [
+    { field: 'usn', column: 'usn', value: usn },
+    { field: 'phone', column: 'phone', value: phone },
+  ];
+
+  for (const check of checks) {
+    if (!check.value) continue;
+    let query = supabase.from('applications').select('id,email').eq(check.column, check.value).limit(1);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { data, error } = await query;
+    if (error) {
+      console.error(`Duplicate check on ${check.field} failed:`, error.message);
+      continue;
+    }
+    if (data && data.length > 0) {
+      return { field: check.field, email: (data[0] as { email?: string }).email ?? '' };
+    }
+  }
+  return null;
+}
+
+/** `mithun@gmail.com` becomes `mi****@gmail.com`: recognisable, not disclosed. */
+export function maskEmail(email: string): string {
+  const [local, domain] = String(email ?? '').split('@');
+  if (!local || !domain) return 'another account';
+  const head = local.slice(0, Math.min(2, local.length));
+  return `${head}${'*'.repeat(Math.max(3, local.length - head.length))}@${domain}`;
+}

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser } from '@/lib/auth';
-import { env } from '@/lib/env';
-import { sendEmail } from '@/lib/email';
-import { emailDetailTable, emailLayout, emailMuted, emailParagraph } from '@/lib/email-template';
 import {
-  escapeHtml,
   getClientIp,
   isValidEmail,
   isValidPhone,
@@ -15,9 +11,8 @@ import {
 import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
-import { findApplicationFor } from '@/lib/applications';
+import { findApplicationFor, findDuplicateApplicant, maskEmail } from '@/lib/applications';
 import { applicationsAccepting, closedMessageFor, getAppSettings } from '@/lib/settings';
-import { SITE } from '@/lib/site';
 import {
   COURSES,
   EXTRA_LABELS,
@@ -180,6 +175,23 @@ export async function POST(req: NextRequest) {
     // current user. Matching on the form email (as this route used to) let
     // anyone who typed someone else's address claim their row.
     const existing = await findApplicationFor(supabase, user.id, authEmail, 'id,user_id');
+
+    // Same person, second account. A USN or mobile number already used by a
+    // different row means someone is applying twice from another email, so this
+    // is refused rather than merged: a USN is not a secret, and adopting a row on
+    // the strength of one would let anyone claim another student's application.
+    const duplicate = await findDuplicateApplicant(supabase, {
+      usn: studentId,
+      phone,
+      excludeId: existing?.id ?? null,
+    });
+    if (duplicate) {
+      return bad(
+        `That ${duplicate.field === 'usn' ? idLabel : 'mobile number'} is already registered on this drive under ${maskEmail(duplicate.email)}. Sign in with that account to update the application, or ask the core team if that is not you.`,
+        409
+      );
+    }
+
     let dbError = null;
     if (existing) {
       const { error } = await supabase.from('applications').update(row).eq('id', existing.id);
@@ -190,46 +202,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (dbError) {
+      // A unique-index violation here means two submissions raced past the check
+      // above. Report it as the conflict it is rather than a generic failure.
+      if (dbError.code === '23505') {
+        return bad(
+          `That ${idLabel} or mobile number is already registered on this drive. Sign in with the account you used the first time.`,
+          409
+        );
+      }
       console.error('Application DB write failed:', dbError.message);
       return bad('Could not save application.', 500);
     }
 
-    const e = escapeHtml;
-
-    // No admin notification on submission, by request: reviewers watch the
-    // console, which shows every application plus live stats, so a mail per
-    // registration was just noise during a drive.
-    const applicantHtml = emailLayout({
-      title: 'Application received',
-      preheader: 'We have your Linux OSS Club application. Here is what happens next.',
-      bodyHtml: [
-        emailParagraph(`Hey ${e(fullName)},`),
-        emailParagraph(
-          `We received your Linux OpenSource Club application (${e(idLabel)} ${e(studentId)}). The core team reviews every application after the registration drive closes, and we will reach out on this email address.`
-        ),
-        emailDetailTable([
-          [idLabel, e(studentId)],
-          ['Year', `${e(year)} year, section ${e(section)}`],
-          ['Branch', e(course)],
-          ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
-        ]),
-        emailMuted('Nothing else is needed from you right now. Sessions run 4:00 PM to 6:00 PM on working days in Lab A-306 / A-228, and announcements go out on the WhatsApp group and Discord.'),
-      ].join(''),
-      cta: { label: 'Join the WhatsApp group', url: SITE.whatsapp },
-      note: `You can view or withdraw your application any time at ${env.appUrl}/account.`,
-    });
-
-    try {
-      await sendEmail({
-        to: authEmail,
-        subject: 'Application received - Linux OpenSource Club',
-        html: applicantHtml,
-      });
-    } catch (mailErr) {
-      // The application is already saved; a failed confirmation must not fail it.
-      console.error('Applicant confirmation email failed on every channel:', mailErr);
-    }
-
+    // No emails on submission, by request. Reviewers watch the console, and the
+    // applicant is taken straight to the WhatsApp group; the only mail the club
+    // sends now is the accept or reject decision.
     return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('Application API error:', err);
