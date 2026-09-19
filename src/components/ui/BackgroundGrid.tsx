@@ -75,7 +75,7 @@ export function BackgroundGrid() {
 
         if (p.isRed) {
           ctx.fillStyle = isLight
-            ? `rgba(225, 29, 72, ${p.alpha * 0.9})`
+            ? `rgba(var(--accent-rgb), ${p.alpha * 0.9})`
             : `rgba(239, 68, 68, ${p.alpha * 1.5})`;
         } else {
           ctx.fillStyle = isLight
@@ -96,7 +96,7 @@ export function BackgroundGrid() {
           if (dist < 110) {
             if (p.isRed || p2.isRed) {
               ctx.strokeStyle = isLight
-                ? `rgba(225, 29, 72, ${0.1 * (1 - dist / 110)})`
+                ? `rgba(var(--accent-rgb), ${0.1 * (1 - dist / 110)})`
                 : `rgba(239, 68, 68, ${0.12 * (1 - dist / 110)})`;
             } else {
               ctx.strokeStyle = isLight

@@ -30,7 +30,7 @@ export function Events() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="minimal-card minimal-card-red-hover rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 bg-[#E11D48] !text-white font-mono text-[10px] uppercase font-bold px-3 py-1 rounded-bl-lg">
+            <div className="absolute top-0 right-0 bg-accent !text-accent-contrast font-mono text-[10px] uppercase font-bold px-3 py-1 rounded-bl-lg">
               RECRUITMENT DRIVE
             </div>
             <div>
@@ -53,7 +53,7 @@ export function Events() {
             </div>
             <div className="mt-8 pt-6 border-t border-border flex flex-wrap gap-3 items-center justify-between">
               <span className="text-xs font-mono text-ink-muted">Registration → test → interview</span>
-              <Link href="/apply" className="inline-flex items-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold px-4 py-2.5 rounded-lg shadow-md transition-all">
+              <Link href="/apply" className="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast text-xs font-mono font-bold px-4 py-2.5 rounded-lg shadow-md transition-all">
                 <span>Register</span><ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

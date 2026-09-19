@@ -13,7 +13,7 @@ import { BackgroundGrid } from '../components/ui/BackgroundGrid';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-ink font-body relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background text-ink font-body relative selection:bg-accent selection:text-accent-contrast transition-colors duration-200">
       {/* Dynamic Animated Particles & Cyber Grid */}
       <BackgroundGrid />
       

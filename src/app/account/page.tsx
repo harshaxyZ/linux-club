@@ -93,13 +93,13 @@ export default function AccountPage() {
             <div className="minimal-card rounded-3xl p-12 text-center">
               <h2 className="font-heading font-extrabold text-2xl">Application Withdrawn</h2>
               <p className="text-sm text-ink-muted mt-2">Your record was deleted.</p>
-              <Link href="/" className="mt-6 inline-block bg-[#E11D48] !text-white font-mono font-bold text-xs px-6 py-3 rounded-xl">Return Home</Link>
+              <Link href="/" className="mt-6 inline-block bg-accent !text-accent-contrast font-mono font-bold text-xs px-6 py-3 rounded-xl">Return Home</Link>
             </div>
           ) : !app ? (
             <div className="minimal-card rounded-3xl p-12 text-center">
               <h2 className="font-heading font-extrabold text-2xl">No application found</h2>
               <p className="text-sm text-ink-muted mt-2">Signed in as {userEmail}. No application is linked to this sign-in yet.</p>
-              <Link href="/apply" className="mt-6 inline-block bg-[#E11D48] !text-white font-mono font-bold text-xs px-6 py-3 rounded-xl">Apply Now</Link>
+              <Link href="/apply" className="mt-6 inline-block bg-accent !text-accent-contrast font-mono font-bold text-xs px-6 py-3 rounded-xl">Apply Now</Link>
             </div>
           ) : (
             <div className="space-y-8">
@@ -140,7 +140,7 @@ export default function AccountPage() {
                   <h4 className="font-bold text-accent">Withdraw Application</h4>
                   <p className="text-xs text-ink-muted mt-1">Permanently deletes your record.</p>
                 </div>
-                <button onClick={withdraw} className="inline-flex items-center gap-2 bg-[#E11D48] !text-white font-mono font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">
+                <button onClick={withdraw} className="inline-flex items-center gap-2 bg-accent !text-accent-contrast font-mono font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer">
                   <Trash2 className="w-4 h-4" /><span>Withdraw</span>
                 </button>
               </div>

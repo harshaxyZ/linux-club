@@ -142,7 +142,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+              className="mt-0.5 w-4 h-4 shrink-0 accent-accent cursor-pointer"
             />
             <span>
               I agree to the{' '}
@@ -192,7 +192,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+              className="mt-0.5 w-4 h-4 shrink-0 accent-accent cursor-pointer"
             />
             <span>
               I agree to the{' '}
@@ -204,7 +204,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Mail className="w-3.5 h-3.5" />
             <span>{loading ? 'Sending…' : 'Send Code →'}</span>
@@ -237,7 +237,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Key className="w-3.5 h-3.5" />
             <span>{loading ? 'Verifying…' : 'Verify & Continue →'}</span>

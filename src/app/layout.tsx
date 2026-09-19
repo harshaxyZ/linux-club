@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body
-        className="min-h-screen bg-background text-ink antialiased selection:bg-rose-600 selection:text-white transition-colors duration-200"
+        className="min-h-screen bg-background text-ink antialiased selection:bg-accent selection:text-accent-contrast transition-colors duration-200"
         suppressHydrationWarning
       >
         <ThemeProvider>

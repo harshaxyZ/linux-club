@@ -36,7 +36,7 @@ export function CallToAction() {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/apply"
-              className="inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl shadow-rose-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl shadow-accent/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Sign In &amp; Apply</span>
               <ArrowRight className="w-4 h-4" />

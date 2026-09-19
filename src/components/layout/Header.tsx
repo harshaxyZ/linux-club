@@ -71,7 +71,7 @@ export function Header({ showNav = true }: { showNav?: boolean }) {
           {/* Action CTA */}
           <Link
             href="/apply"
-            className="inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider px-4 sm:px-5 py-2.5 rounded-lg shadow-lg shadow-rose-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs uppercase tracking-wider px-4 sm:px-5 py-2.5 rounded-lg shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Apply Now</span>
             <ArrowRight className="w-3.5 h-3.5" />

@@ -207,7 +207,7 @@ export function ApplicantDetails({ app, onStatusChange, savingId, feedback }: Ap
             current={app.status}
             saving={saving}
             onClick={() => onStatusChange(app.id, 'accepted')}
-            activeClass="bg-[#E11D48] !text-white ring-accent"
+            activeClass="bg-accent !text-accent-contrast ring-accent"
           >
             <CheckCircle2 className="w-4 h-4" aria-hidden="true" /><span>Accept</span>
           </StatusButton>

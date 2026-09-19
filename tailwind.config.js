@@ -20,16 +20,11 @@ module.exports = {
           dark: 'var(--text-subtle)',
         },
         accent: {
-          DEFAULT: '#E11D48',
-          hover: '#F43F5E',
-          glow: 'rgba(225, 29, 72, 0.35)',
+          DEFAULT: 'var(--accent)',
+          hover: 'var(--accent-hover)',
+          glow: 'var(--accent-glow)',
+          contrast: 'var(--accent-contrast)',
           terminal: '#10B981',
-        },
-        brand: {
-          red: '#E11D48',
-          'red-dark': '#BE123C',
-          'red-crimson': '#9F1239',
-          'red-glow': 'rgba(225, 29, 72, 0.35)',
         },
       },
       fontFamily: {

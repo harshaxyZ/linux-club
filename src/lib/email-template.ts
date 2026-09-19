@@ -13,7 +13,11 @@ import { SITE } from './site';
 
 const INK = '#F1F5F9';
 const MUTED = '#8B98A9';
-const ACCENT = '#E11D48';
+// Emails cannot read CSS variables and cannot switch theme, so the bright
+// mint is fixed here: it sits on the dark card (9.5:1) and takes near-black text
+// on filled buttons.
+const ACCENT = '#34D399';
+const ON_ACCENT = '#04231A';
 const PAGE_BG = '#050505';
 const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';
@@ -57,7 +61,7 @@ export function emailLayout({ title, preheader, bodyHtml, cta, note }: EmailLayo
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:24px 0 8px;">
         <tr>
           <td align="center" bgcolor="${ACCENT}" style="border-radius:10px;">
-            <a href="${cta.url}" style="display:inline-block;padding:13px 26px;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF;text-decoration:none;">${cta.label}</a>
+            <a href="${cta.url}" style="display:inline-block;padding:13px 26px;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:${ON_ACCENT};text-decoration:none;">${cta.label}</a>
           </td>
         </tr>
       </table>`

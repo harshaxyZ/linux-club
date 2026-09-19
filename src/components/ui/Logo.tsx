@@ -26,7 +26,7 @@ export function Logo({
             />
             <path
               d="M14 6H20V12H14V6Z"
-              fill="#E11D48"
+              className="fill-accent transition-colors"
             />
             <path
               d="M14 14H20V18H14V14Z"

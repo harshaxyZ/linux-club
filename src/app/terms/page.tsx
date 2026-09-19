@@ -73,7 +73,7 @@ export default function TermsPage() {
             </div>
 
             <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row gap-4">
-              <Link href="/apply" className="inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl">
+              <Link href="/apply" className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl">
                 <span>Sign In &amp; Apply</span>
               </Link>
               <Link href="/privacy" className="inline-flex items-center justify-center gap-2 bg-surface hover:bg-subsurface border border-border text-ink font-mono text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl">

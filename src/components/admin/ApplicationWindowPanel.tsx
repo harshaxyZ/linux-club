@@ -126,7 +126,7 @@ export function ApplicationWindowPanel() {
             className={`w-full inline-flex items-center justify-center gap-2 font-mono font-bold text-xs py-3 rounded-xl cursor-pointer disabled:opacity-50 ${
               settings?.applicationsOpen
                 ? 'bg-surface border border-border text-ink'
-                : 'bg-[#E11D48] !text-white'
+                : 'bg-accent !text-accent-contrast'
             }`}
           >
             {settings?.applicationsOpen ? (

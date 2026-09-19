@@ -272,7 +272,7 @@ export default function ApplyPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background font-body text-ink relative selection:bg-rose-600 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background font-body text-ink relative selection:bg-accent selection:text-accent-contrast transition-colors duration-200">
       <BackgroundGrid />
       <Header showNav={false} />
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 relative z-10">
@@ -296,7 +296,7 @@ export default function ApplyPage() {
               <p className="text-sm text-ink-muted mt-4 max-w-lg leading-relaxed">{closedMessage}</p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <Link href="/" className="bg-surface hover:bg-subsurface border border-border text-ink text-xs font-mono font-semibold px-6 py-3 rounded-xl">Return Home</Link>
-                <Link href="/account" className="bg-[#E11D48] !text-white text-xs font-mono font-semibold px-6 py-3 rounded-xl">My Application</Link>
+                <Link href="/account" className="bg-accent !text-accent-contrast text-xs font-mono font-semibold px-6 py-3 rounded-xl">My Application</Link>
               </div>
             </div>
           ) : !user ? (
@@ -336,7 +336,7 @@ export default function ApplyPage() {
               {/* Next step for every applicant: the announcements group. */}
               <a
                 href={SITE.whatsapp}
-                className="mt-8 inline-flex items-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg"
+                className="mt-8 inline-flex items-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast text-xs font-mono font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg"
               >
                 <MessageCircle className="w-4 h-4" aria-hidden="true" />
                 <span>Join the WhatsApp group</span>
@@ -614,7 +614,7 @@ export default function ApplyPage() {
                     type="checkbox"
                     checked={consent}
                     onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 shrink-0 accent-[#E11D48] cursor-pointer"
+                    className="mt-0.5 w-4 h-4 shrink-0 accent-accent cursor-pointer"
                   />
                   <span>
                     I agree to the{' '}
@@ -625,7 +625,7 @@ export default function ApplyPage() {
                   </span>
                 </label>
                 <button type="submit" disabled={loading}
-                  className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold uppercase tracking-wider py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 cursor-pointer">
+                  className="w-full bg-accent hover:bg-accent-hover !text-accent-contrast text-xs font-mono font-bold uppercase tracking-wider py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 cursor-pointer">
                   {loading ? 'Submitting…' : 'Submit Application →'}
                 </button>
               </form>

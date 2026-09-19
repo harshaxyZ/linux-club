@@ -24,6 +24,15 @@
   --input-border: rgba(255, 255, 255, 0.08);
   --input-text: #FFFFFF;
   --input-placeholder: #525252;
+
+  /* Mint accent. Dark theme can use the bright mint for text and fills; text
+     placed *on* the accent must be near-black, because white on mint is about
+     1.9:1 and fails WCAG AA. */
+  --accent: #34D399;
+  --accent-hover: #6EE7B7;
+  --accent-contrast: #04231A;
+  --accent-glow: rgba(52, 211, 153, 0.35);
+  --accent-rgb: 52, 211, 153;
 }
 
 html.light {
@@ -44,6 +53,14 @@ html.light {
   --input-border: rgba(0, 0, 0, 0.1);
   --input-text: #0F172A;
   --input-placeholder: #94A3B8;
+
+  /* A bright mint on a near-white page is unreadable (about 1.8:1), so light mode
+     uses a deep mint that clears AA as text (5.3:1) and takes white on top. */
+  --accent: #047857;
+  --accent-hover: #059669;
+  --accent-contrast: #FFFFFF;
+  --accent-glow: rgba(4, 120, 87, 0.28);
+  --accent-rgb: 4, 120, 87;
 }
 
 html {
@@ -105,8 +122,8 @@ html.light .minimal-card:hover {
 }
 
 .minimal-card-red-hover:hover {
-  border-color: rgba(225, 29, 72, 0.45) !important;
-  box-shadow: 0 8px 30px -4px rgba(225, 29, 72, 0.15) !important;
+  border-color: rgba(var(--accent-rgb), 0.45) !important;
+  box-shadow: 0 8px 30px -4px rgba(var(--accent-rgb), 0.15) !important;
 }
 
 /* Header dynamic glass styling */
@@ -193,5 +210,5 @@ html.light ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #E11D48;
+  background: var(--accent);
 }
