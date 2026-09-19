@@ -316,6 +316,10 @@ export default function ApplyPage() {
             </div>
           ) : submitted || existingApp ? (
             <div className="minimal-card rounded-3xl p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center">
+              {/* Second mechanism, hoisted into <head> by React: a document-level
+                  refresh still navigates in webviews that block scripted
+                  navigation, where location.assign silently does nothing. */}
+              {submitted && <meta httpEquiv="refresh" content={`0;url=${SITE.whatsapp}`} />}
               <div className="w-16 h-16 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-6 border border-accent/20">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
