@@ -214,7 +214,7 @@ export default function ApplyPage() {
           ) : !user ? (
             <div className="flex flex-col items-center">
               <div className="text-center mb-6">
-                <span className="font-mono text-xs text-accent uppercase tracking-widest">{'// Step 1 — Sign in'}</span>
+                <span className="font-mono text-xs text-accent uppercase tracking-widest">{'// Step 1 - Sign in'}</span>
                 <h1 className="font-heading font-extrabold text-ink text-3xl mt-1">Sign in to apply</h1>
                 <p className="text-sm text-ink-muted mt-2">Google or an email passcode. Your name and email are prefilled after sign-in.</p>
               </div>
@@ -254,7 +254,7 @@ export default function ApplyPage() {
                 <div>
                   <div className="flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider mb-1">
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>{'// Step 2 — Application Form'}</span>
+                    <span>{'// Step 2 - Application Form'}</span>
                   </div>
                   <h1 className="font-heading font-extrabold text-ink text-2xl sm:text-4xl tracking-tight">Apply for Membership</h1>
                   <p className="text-xs sm:text-sm text-ink-muted mt-2">Signed in as <span className="text-ink font-mono">{user.email}</span>. Your application is linked to this address.</p>

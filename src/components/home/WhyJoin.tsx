@@ -14,7 +14,7 @@ const benefits = [
   {
     icon: Users,
     title: 'Mentored tracks, fair evaluation',
-    desc: 'Core team owns each domain track. Published monthly scoring — attendance, tasks, Git activity, initiative — with written feedback and appeal to faculty.',
+    desc: 'Core team owns each domain track. Published monthly scoring - attendance, tasks, Git activity, initiative - with written feedback and appeal to faculty.',
   },
   {
     icon: Trophy,
@@ -29,7 +29,7 @@ const benefits = [
   {
     icon: Zap,
     title: 'Foundation for juniors',
-    desc: 'Mandatory Unix/Linux and Git baseline before track work. 1st–3rd sem start from C/Python fundamentals; no one is left behind.',
+    desc: 'Mandatory Unix/Linux and Git baseline before track work. 1st to 3rd sem start from programming fundamentals in whichever language they choose; no one is left behind.',
   },
   {
     icon: Flame,
@@ -50,7 +50,7 @@ export function WhyJoin() {
             Built for sustained work
           </h2>
           <p className="text-base text-ink-muted mt-4">
-            Not a one-time test club — a daily practice with mentoring, public output, and monthly accountability.
+            Not a one-time test club - a daily practice with mentoring, public output, and monthly accountability.
           </p>
         </div>
 

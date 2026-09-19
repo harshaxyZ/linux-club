@@ -44,8 +44,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 text-base sm:text-lg text-ink-muted leading-relaxed max-w-2xl mx-auto font-normal"
         >
-          Master Ubuntu Linux, solve DSA daily, and contribute to real open-source software —
-          mentored by a 10-member core team, evaluated monthly, representing DBIT at hackathons and GSoC.
+          Master Ubuntu Linux, solve DSA daily, and contribute to real open-source software - mentored by a 10-member core team, evaluated monthly, representing DBIT at hackathons and GSoC.
         </motion.p>
 
         {/* Action CTAs */}

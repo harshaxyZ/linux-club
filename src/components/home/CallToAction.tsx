@@ -21,7 +21,7 @@ export function CallToAction() {
 
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent font-mono text-xs mb-6">
             <Terminal className="w-3.5 h-3.5" />
-            <span>{'// REGISTRATION OPEN — ALL BRANCHES'}</span>
+            <span>{'// REGISTRATION OPEN - ALL BRANCHES'}</span>
           </div>
 
           <h2 className="font-heading font-extrabold text-ink text-3xl sm:text-5xl tracking-tight max-w-2xl mx-auto leading-tight">

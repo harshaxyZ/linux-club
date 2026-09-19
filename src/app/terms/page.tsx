@@ -41,7 +41,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="font-heading font-bold text-ink text-lg mb-2">3. Your account</h2>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Use Google OAuth or your own email-code sign-in. Keep your account to yourself — one account per person.</li>
+                  <li>Use Google OAuth or your own email-code sign-in. Keep your account to yourself - one account per person.</li>
                   <li>Provide accurate details. False information can lead to rejection or removal.</li>
                 </ul>
               </section>

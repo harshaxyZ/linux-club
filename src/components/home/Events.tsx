@@ -43,7 +43,7 @@ export function Events() {
               </h3>
               <p className="text-sm text-ink-muted leading-relaxed mb-6">
                 Registration → semester-wise screening test → interview where required → provisional
-                membership → first monthly evaluation confirms ~20–25 members. Open to all branches.
+                membership → first monthly evaluation confirms ~20-25 members. Open to all branches.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono text-ink-muted pt-4 border-t border-border">
                 <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-accent" /><span>Start of academic year</span></div>

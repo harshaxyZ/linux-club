@@ -31,7 +31,7 @@ const milestones = [
     title: 'Domain Work + Evaluation 1',
     desc: 'Full DSA / AI / systems work, first internal contest, then the decisive first monthly evaluation: provisional → confirmed.',
     tag: 'Accountability',
-    badge: '~50 → ~20–25',
+    badge: '~50 → ~20-25',
   },
 ];
 

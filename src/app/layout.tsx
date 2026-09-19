@@ -5,9 +5,9 @@ import { ScrollProgressBar } from '../components/ui/ScrollProgressBar';
 import { ThemeProvider } from '../components/theme/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'Linux OpenSource Club — DBIT',
+  title: 'Linux OpenSource Club - DBIT',
   description:
-    'Student-run Linux, DSA, and open source club at Don Bosco Institute of Technology. Daily sessions 4–6 PM, Lab A-306/A-228. Registration → test → interview → monthly evaluation.',
+    'Student-run Linux, DSA, and open source club at Don Bosco Institute of Technology. Daily sessions 4-6 PM, Lab A-306/A-228. Registration → test → interview → monthly evaluation.',
 };
 
 export const viewport = {
