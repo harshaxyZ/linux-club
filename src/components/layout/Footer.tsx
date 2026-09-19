@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Logo } from '../ui/Logo';
-import { Code2 as Github, MessageSquare } from 'lucide-react';
+import { Code2 as Github, Linkedin, MessageCircle, MessageSquare } from 'lucide-react';
 import { SITE } from '../../lib/site';
 
 export function Footer() {
@@ -48,6 +48,18 @@ export function Footer() {
                 <a href={SITE.discord} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-ink transition-colors">
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>Community Discord</span>
+                </a>
+              </li>
+              <li>
+                <a href={SITE.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-ink transition-colors">
+                  <Linkedin className="w-3.5 h-3.5" />
+                  <span>LinkedIn Page</span>
+                </a>
+              </li>
+              <li>
+                <a href={SITE.whatsapp} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-ink transition-colors">
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>WhatsApp Group</span>
                 </a>
               </li>
               <li>

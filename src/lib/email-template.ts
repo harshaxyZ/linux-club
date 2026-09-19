@@ -122,6 +122,10 @@ export function emailLayout({ title, preheader, bodyHtml, cta, note }: EmailLayo
             <p style="margin:0;font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:11px;color:${MUTED};">
               <a href="${SITE.discord}" style="color:${ACCENT};text-decoration:none;">Discord</a>
               &nbsp;&middot;&nbsp;
+              <a href="${SITE.whatsapp}" style="color:${ACCENT};text-decoration:none;">WhatsApp</a>
+              &nbsp;&middot;&nbsp;
+              <a href="${SITE.linkedin}" style="color:${ACCENT};text-decoration:none;">LinkedIn</a>
+              &nbsp;&middot;&nbsp;
               <a href="${SITE.github}" style="color:${ACCENT};text-decoration:none;">GitHub</a>
               &nbsp;&middot;&nbsp;
               <a href="${env.appUrl}" style="color:${ACCENT};text-decoration:none;">${env.appUrl.replace(/^https?:\/\//, '')}</a>
