@@ -62,8 +62,13 @@ export default function AdminPage() {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
+        const host = params.get('host');
         if (err) {
-          setPageError('Google sign-in did not complete. Try again or use an email code.');
+          setPageError(
+            host
+              ? `Google sign-in did not complete (on ${host} — use https://webuildnow.in without www). Try again or use an email code.`
+              : 'Google sign-in did not complete. Try again or use an email code.'
+          );
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }

@@ -68,8 +68,10 @@ export default function ApplyPage() {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
+        const host = params.get('host');
+        const where = host ? ` (on ${host} — use https://webuildnow.in without www)` : '';
         if (err === 'exchange') {
-          setPageError('Google sign-in reached us but the session could not be completed. Try again or use an email code.');
+          setPageError(`Google sign-in reached us but the session could not be completed${where}. Try again or use an email code.`);
         } else if (err) {
           setPageError('Sign-in did not complete. Please try again or use an email code.');
         }

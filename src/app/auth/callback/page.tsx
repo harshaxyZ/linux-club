@@ -33,7 +33,8 @@ export default function AuthCallbackPage() {
       if (error) {
         console.error('OAuth exchange error:', error.message);
         setFailed(true);
-        setTimeout(() => router.replace(`${next}?error=exchange`), 1200);
+        const host = window.location.host;
+        setTimeout(() => router.replace(`${next}?error=exchange&host=${encodeURIComponent(host)}`), 1200);
       } else {
         router.replace(next);
       }
