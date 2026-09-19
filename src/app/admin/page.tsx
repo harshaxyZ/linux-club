@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Logo } from '../../components/ui/Logo';
 import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
 import { AuthGate } from '../../components/auth/AuthGate';
 import {
-  CheckCircle2, XCircle, Search, ExternalLink, UserPlus,
-  LogOut, Lock, Download, Clock, AlertCircle, Sun, Moon, ArrowLeft, Terminal,
+  Search, UserPlus, LogOut, Lock, Download, AlertCircle,
+  Sun, Moon, ArrowLeft, Terminal, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
@@ -14,27 +14,11 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { deviceHeaders } from '../../lib/device-client';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { StatsPanel } from '../../components/admin/StatsPanel';
+import { ApplicantDetails } from '../../components/admin/ApplicantDetails';
 import { studentIdLabel } from '../../lib/form-options';
+import type { Application } from '../../lib/application-types';
 
 export const dynamic = 'force-dynamic';
-
-interface Application {
-  id: string;
-  full_name: string;
-  usn: string;
-  year: string;
-  course: string;
-  section: string;
-  email: string;
-  phone: string;
-  github_url?: string | null;
-  linkedin_url?: string | null;
-  languages?: string[] | null;
-  extra_links?: Array<{ label: string; url: string }> | null;
-  about_text: string;
-  status: 'pending' | 'under_review' | 'accepted' | 'rejected';
-  created_at: string;
-}
 
 export default function AdminPage() {
   const { theme, toggleTheme } = useTheme();
@@ -50,6 +34,8 @@ export default function AdminPage() {
   const [selectedYear, setSelectedYear] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const closeDetailsRef = useRef<HTMLButtonElement | null>(null);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -144,6 +130,23 @@ export default function AdminPage() {
     }, 400);
     return () => clearTimeout(t);
   }, [searchQuery, selectedYear, selectedStatus, authed, isAdmin, loadApps]);
+
+  const openDetails = useCallback((app: Application) => {
+    setSelectedApp(app);
+    // Below lg there is no side panel, so the details open as a modal.
+    setDetailsOpen(true);
+  }, []);
+
+  // Escape closes the modal, and focus moves to its close button when it opens.
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDetailsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    closeDetailsRef.current?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [detailsOpen]);
 
   const updateStatus = async (id: string, status: Application['status']) => {
     setActionError('');
@@ -306,16 +309,22 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7 minimal-card rounded-3xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px] text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
+                <caption className="sr-only">Applications. Select a row to see full details.</caption>
                 <thead className="bg-subsurface border-b border-border text-ink-muted uppercase font-mono text-[10px]">
-                  <tr><th className="p-4">Student</th><th className="p-4">Branch &amp; Year</th><th className="p-4">Status</th><th className="p-4 text-right">Review</th></tr>
+                  <tr><th scope="col" className="p-4">Applicant</th><th scope="col" className="p-4">Branch &amp; Year</th><th scope="col" className="p-4">Status</th><th scope="col" className="p-4 text-right">Review</th></tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {apps.length === 0 ? (
                     <tr><td colSpan={4} className="p-8 text-center text-ink-muted font-mono text-xs">No applications found.</td></tr>
                   ) : apps.map((app) => (
-                    <tr key={app.id} onClick={() => setSelectedApp(app)} className={`cursor-pointer hover:bg-subsurface/60 ${selectedApp?.id === app.id ? 'bg-accent/10' : ''}`}>
-                      <td className="p-4"><div className="font-semibold text-sm">{app.full_name}</div><div className="font-mono text-ink-muted text-[11px]">{app.usn}</div></td>
+                    <tr key={app.id} onClick={() => openDetails(app)} className={`cursor-pointer hover:bg-subsurface/60 ${selectedApp?.id === app.id ? 'bg-accent/10' : ''}`}>
+                      <td className="p-4">
+                        <div className="font-semibold text-sm text-ink">{app.full_name}</div>
+                        <div className="font-mono text-ink-muted text-[11px]">
+                          {studentIdLabel(app.year) === 'USN' ? '' : 'Reg '}{app.usn}
+                        </div>
+                      </td>
                       <td className="p-4 font-mono text-ink-muted"><div className="text-ink">{app.course}</div><div className="text-[10px]">{app.year} (Sec {app.section})</div></td>
                       <td className="p-4 font-mono">
                         {app.status === 'pending' && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">Pending</span>}
@@ -323,7 +332,16 @@ export default function AdminPage() {
                         {app.status === 'accepted' && <span className="text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full font-bold">Accepted</span>}
                         {app.status === 'rejected' && <span className="text-ink-muted bg-subsurface border border-border px-2 py-0.5 rounded-full font-bold">Rejected</span>}
                       </td>
-                      <td className="p-4 text-right"><button onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }} className="text-accent font-mono text-xs hover:underline cursor-pointer">Details →</button></td>
+                      <td className="p-4 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); openDetails(app); }}
+                          aria-label={`View details for ${app.full_name}`}
+                          className="text-accent font-mono text-xs hover:underline cursor-pointer"
+                        >
+                          Details →
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -331,74 +349,47 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 minimal-card rounded-3xl p-6">
+          {/* Side panel on large screens. Below that the same details open as a modal. */}
+          <div className="hidden lg:block lg:col-span-5 minimal-card rounded-3xl p-6">
             {selectedApp ? (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-border pb-4">
-                  <div>
-                    <h3 className="font-heading font-extrabold text-xl">{selectedApp.full_name}</h3>
-                    <p className="font-mono text-xs text-ink-muted mt-0.5">{selectedApp.usn} • {selectedApp.course} ({selectedApp.year})</p>
-                  </div>
-                </div>
-                <div className="space-y-3.5 text-xs font-mono">
-                  <div><span className="text-ink-muted uppercase text-[10px] block mb-1">{studentIdLabel(selectedApp.year)}</span><p className="text-ink">{selectedApp.usn}</p></div>
-                  <div><span className="text-ink-muted uppercase text-[10px] block mb-1">Contact</span><p className="text-ink">{selectedApp.email} • {selectedApp.phone}</p></div>
-                  {selectedApp.year === '1st' && (
-                    <div>
-                      <span className="text-ink-muted uppercase text-[10px] block mb-1">Languages known</span>
-                      {selectedApp.languages && selectedApp.languages.length > 0 ? (
-                        <ul className="flex flex-wrap gap-1.5">
-                          {selectedApp.languages.map((lang) => (
-                            <li key={lang} className="bg-accent/10 border border-accent/20 text-accent px-2 py-0.5 rounded-full text-[11px]">{lang}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-ink-muted">Not answered</p>
-                      )}
-                    </div>
-                  )}
-                  <div><span className="text-ink-muted uppercase text-[10px] block mb-1">GitHub</span>
-                    {selectedApp.github_url ? (
-                      <a href={selectedApp.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1"><span className="break-all">{selectedApp.github_url}</span><ExternalLink className="w-3 h-3 shrink-0" /></a>
-                    ) : (
-                      <p className="text-ink-muted">Not provided</p>
-                    )}
-                  </div>
-                  {selectedApp.linkedin_url && (
-                    <div><span className="text-ink-muted uppercase text-[10px] block mb-1">LinkedIn</span>
-                      <a href={selectedApp.linkedin_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1"><span className="break-all">{selectedApp.linkedin_url}</span><ExternalLink className="w-3 h-3 shrink-0" /></a></div>
-                  )}
-                  {selectedApp.extra_links && selectedApp.extra_links.length > 0 && (
-                    <div><span className="text-ink-muted uppercase text-[10px] block mb-1">Extra profiles</span>
-                      {selectedApp.extra_links.map((l, i) => l.url && (
-                        <a key={i} href={l.url} target="_blank" rel="noreferrer" className="text-accent hover:underline block">{l.label}: {l.url}</a>
-                      ))}
-                    </div>
-                  )}
-                  <div><span className="text-ink-muted uppercase text-[10px] block mb-1">Statement</span>
-                    <p className="bg-subsurface border border-border p-3.5 rounded-xl text-ink font-body">{selectedApp.about_text}</p></div>
-                </div>
-                <div className="pt-6 border-t border-border flex flex-wrap gap-2">
-                  <button onClick={() => updateStatus(selectedApp.id, 'accepted')} className="flex-1 bg-[#E11D48] !text-white font-mono font-bold text-xs py-3 rounded-xl cursor-pointer flex items-center justify-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /><span>Accept</span>
-                  </button>
-                  <button onClick={() => updateStatus(selectedApp.id, 'under_review')} className="flex-1 bg-subsurface font-mono font-bold text-xs py-3 rounded-xl border border-border cursor-pointer flex items-center justify-center gap-1.5">
-                    <Clock className="w-4 h-4" /><span>In Review</span>
-                  </button>
-                  <button onClick={() => updateStatus(selectedApp.id, 'rejected')} className="flex-1 bg-surface text-ink-muted font-mono font-bold text-xs py-3 rounded-xl border border-border cursor-pointer flex items-center justify-center gap-1.5">
-                    <XCircle className="w-4 h-4" /><span>Reject</span>
-                  </button>
-                </div>
-              </div>
+              <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} />
             ) : (
               <div className="min-h-[300px] flex flex-col items-center justify-center text-ink-muted">
-                <Terminal className="w-10 h-10 opacity-30 mb-3" />
-                <p className="text-xs font-mono">Select an application to inspect.</p>
+                <Terminal className="w-10 h-10 opacity-30 mb-3" aria-hidden="true" />
+                <p className="text-xs font-mono">Select an applicant to inspect.</p>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      {/* Details modal for tablet and phone widths, where there is no side panel. */}
+      {detailsOpen && selectedApp && (
+        <div
+          className="lg:hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-start justify-center p-3 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Application details for ${selectedApp.full_name}`}
+          onClick={() => setDetailsOpen(false)}
+        >
+          <div
+            className="minimal-card rounded-3xl p-5 w-full max-w-lg my-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-end mb-2">
+              <button
+                type="button"
+                ref={closeDetailsRef}
+                onClick={() => setDetailsOpen(false)}
+                className="inline-flex items-center gap-1.5 text-xs font-mono text-ink-muted hover:text-ink cursor-pointer px-2 py-1"
+              >
+                <X className="w-4 h-4" aria-hidden="true" /><span>Close</span>
+              </button>
+            </div>
+            <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} />
+          </div>
+        </div>
+      )}
 
       {inviteOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
