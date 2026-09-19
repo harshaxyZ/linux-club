@@ -52,12 +52,21 @@ export default function AdminPage() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteDone, setInviteDone] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [pageError, setPageError] = useState('');
 
   const supabase = useMemo(() => createClient(), []);
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     async function init() {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const err = params.get('error');
+        if (err) {
+          setPageError('Google sign-in did not complete. Check the server log, then try again or use an email code.');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
       const { data: { session } } = await supabase.auth.getSession();
       const u = session?.user;
       setAuthed(!!u);
@@ -199,6 +208,11 @@ export default function AdminPage() {
           <Link href="/" className="mb-6 text-xs font-mono text-ink-muted hover:text-ink flex items-center gap-1.5">
             <ArrowLeft className="w-3.5 h-3.5" /><span>Back</span>
           </Link>
+          {pageError && (
+            <div className="mb-4 max-w-md w-full p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono">
+              {pageError}
+            </div>
+          )}
           <AuthGate purpose="admin" next="admin" title="Admin sign-in"
             subtitle="Google or email code. Only allowlisted admin emails can proceed." />
         </div>

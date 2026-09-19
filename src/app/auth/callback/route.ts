@@ -44,7 +44,11 @@ export async function GET(request: NextRequest) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
       return NextResponse.redirect(`${appUrl}${next}`);
     }
+    console.error('OAuth exchange error:', error.message);
   }
 
-  return NextResponse.redirect(`${origin}${next}?error=oauth`);
+  // Surface the failure to the UI instead of looping silently.
+  const failUrl = new URL(next, origin);
+  failUrl.searchParams.set('error', code ? 'exchange' : 'oauth');
+  return NextResponse.redirect(failUrl);
 }

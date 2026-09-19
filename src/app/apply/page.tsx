@@ -28,6 +28,7 @@ export default function ApplyPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pageError, setPageError] = useState('');
 
   const [fullName, setFullName] = useState('');
   const [year, setYear] = useState('');
@@ -47,6 +48,16 @@ export default function ApplyPage() {
 
   useEffect(() => {
     async function init() {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const err = params.get('error');
+        if (err === 'exchange') {
+          setPageError('Google sign-in reached us but the session could not be completed. Check the server log for "OAuth exchange error", then try again or use an email code.');
+        } else if (err) {
+          setPageError('Sign-in did not complete. Please try again or use an email code.');
+        }
+        if (err) window.history.replaceState({}, document.title, window.location.pathname);
+      }
       const { data: { session } } = await supabase.auth.getSession();
       const u = session?.user ?? null;
       setUser(u);
@@ -161,6 +172,12 @@ export default function ApplyPage() {
                 <h1 className="font-heading font-extrabold text-ink text-3xl mt-1">Sign in to apply</h1>
                 <p className="text-sm text-ink-muted mt-2">Google or a 6-digit email code. Your name and email are prefilled after sign-in.</p>
               </div>
+              {pageError && (
+                <div className="mb-4 max-w-md w-full p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{pageError}</span>
+                </div>
+              )}
               <AuthGate purpose="apply" next="apply" title="Verify account" subtitle="Prevents spam and links the application to you." />
             </div>
           ) : submitted || existingApp ? (
