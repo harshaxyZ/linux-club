@@ -26,6 +26,7 @@ import { toMobileDigits } from '../../lib/security';
 import {
   BRANCH_USN_CODES,
   USN_SUFFIX_LENGTH,
+  branchFromUsnCode,
   normalizeUsn,
   usnPrefix,
   validateUsn,
@@ -53,6 +54,8 @@ export default function ApplyPage() {
   const [section, setSection] = useState('');
   const [usn, setUsn] = useState('');
   const [usnSuffix, setUsnSuffix] = useState('');
+  // True when the branch was selected from the USN rather than by hand.
+  const [branchFromUsn, setBranchFromUsn] = useState(false);
   const [course, setCourse] = useState('');
   const [courseOther, setCourseOther] = useState('');
   const [email, setEmail] = useState('');
@@ -358,7 +361,20 @@ export default function ApplyPage() {
                           </span>
                           <input id="student-id" type="text" required
                             value={usnSuffix}
-                            onChange={(e) => setUsnSuffix(normalizeUsn(e.target.value).slice(0, USN_SUFFIX_LENGTH))}
+                            onChange={(e) => {
+                              const next = normalizeUsn(e.target.value).slice(0, USN_SUFFIX_LENGTH);
+                              setUsnSuffix(next);
+                              // The USN carries the branch, so once both code
+                              // letters are in, select the branch from it.
+                              if (next.length >= 2) {
+                                const branch = branchFromUsnCode(next.slice(0, 2));
+                                if (branch && branch !== course) {
+                                  setCourse(branch);
+                                  setCourseOther('');
+                                  setBranchFromUsn(true);
+                                }
+                              }
+                            }}
                             maxLength={USN_SUFFIX_LENGTH}
                             disabled={!year}
                             autoComplete="off"
@@ -379,8 +395,10 @@ export default function ApplyPage() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Branch *</label>
-                    <select required value={course} onChange={(e) => setCourse(e.target.value)}
+                    <label htmlFor="branch" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Branch *</label>
+                    <select id="branch" required value={course}
+                      onChange={(e) => { setCourse(e.target.value); setBranchFromUsn(false); }}
+                      aria-describedby="branch-hint"
                       className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent">
                       <option value="" disabled>-- Select --</option>
                       <option value="CSE">Computer Science (CSE)</option>
@@ -394,6 +412,13 @@ export default function ApplyPage() {
                       <option value="CIVIL">Civil</option>
                       <option value="Others">Other</option>
                     </select>
+                    <p id="branch-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                      {branchFromUsn
+                        ? `Filled from your USN code ${usnSuffix.slice(0, 2)}. Change it here if that is wrong.`
+                        : year === '1st'
+                          ? 'Pick your branch.'
+                          : 'Filled automatically once you type the branch code in your USN.'}
+                    </p>
                   </div>
                 </div>
                 {course === 'Others' && (

@@ -14,23 +14,49 @@ export const USN_COLLEGE_CODE = '1DB';
 export const USN_PATTERN = /^[1-4][A-Z]{2}\d{2}[A-Z]{2}\d{3}$/;
 
 /**
- * Branch codes accepted per form branch. Single-code branches are exact. The
- * newer CS specialisations are listed with their known variants because VTU
- * colleges do not use one consistent code for them (AI, CG for CSE-AI&ML;
- * AD, AT, DS for AI & Data Science; CI, CY, IC for IoT and Cyber Security),
- * so a narrow guess would reject genuine students.
+ * Branch code to form branch. This direction is the source of truth so a code
+ * can be resolved back to a branch, which is what lets the form fill the branch
+ * from a typed USN. Every code therefore maps to exactly one branch.
+ *
+ * DBIT uses CI for CSE (AI and Machine Learning). The remaining specialisation
+ * codes are listed with the variants VTU colleges are known to use, since DBIT's
+ * exact codes for AI & DS and IoT are not published anywhere authoritative.
  */
-export const BRANCH_USN_CODES: Record<string, string[]> = {
-  CSE: ['CS'],
-  ISE: ['IS'],
-  ECE: ['EC'],
-  EEE: ['EE'],
-  MECHANICAL: ['ME'],
-  CIVIL: ['CV'],
-  'AI ML': ['AI', 'CG', 'CS'],
-  'AI DS': ['AD', 'AT', 'DS', 'CS'],
-  IOT: ['CI', 'CY', 'IC', 'CS'],
+export const USN_CODE_TO_BRANCH: Record<string, string> = {
+  CS: 'CSE',
+  IS: 'ISE',
+  EC: 'ECE',
+  EE: 'EEE',
+  ME: 'MECHANICAL',
+  CV: 'CIVIL',
+  CI: 'AI ML',
+  AI: 'AI ML',
+  AD: 'AI DS',
+  DS: 'AI DS',
+  AT: 'AI DS',
+  CY: 'IOT',
+  IC: 'IOT',
 };
+
+/** Branch to the codes accepted for it, first entry used in hints and examples. */
+export const BRANCH_USN_CODES: Record<string, string[]> = Object.entries(USN_CODE_TO_BRANCH).reduce<
+  Record<string, string[]>
+>((acc, [code, branch]) => {
+  acc[branch] = [...(acc[branch] ?? []), code];
+  return acc;
+}, {});
+
+/** The branch a USN branch code belongs to, or null when the code is unknown. */
+export function branchFromUsnCode(code: string): string | null {
+  return USN_CODE_TO_BRANCH[code.toUpperCase()] ?? null;
+}
+
+/** The branch implied by a full or partial USN, or null if it cannot be read. */
+export function branchFromUsn(usn: string): string | null {
+  const clean = normalizeUsn(usn);
+  if (clean.length < 7) return null;
+  return branchFromUsnCode(clean.slice(5, 7));
+}
 
 /** Uppercases and drops anything that cannot appear in a USN. */
 export function normalizeUsn(input: string): string {
