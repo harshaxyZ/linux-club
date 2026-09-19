@@ -7,7 +7,7 @@ import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
 import { AuthGate } from '../../components/auth/AuthGate';
 import {
   ArrowLeft, CheckCircle2, Plus, Trash2, Code2 as Github,
-  Globe as Linkedin, AlertCircle, Terminal, LogOut,
+  Globe as Linkedin, AlertCircle, Terminal, LogOut, Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
@@ -48,6 +48,29 @@ export default function ApplyPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState('');
+  // Application window, read from the public settings endpoint. The server
+  // enforces it too, so this is presentation only.
+  const [windowClosed, setWindowClosed] = useState(false);
+  const [closedMessage, setClosedMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data && data.applicationsOpen === false) {
+          setWindowClosed(true);
+          setClosedMessage(data.closedMessage || 'Applications are closed right now.');
+        }
+      })
+      .catch(() => {
+        // Leave the form available if the check fails; the API still enforces.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [fullName, setFullName] = useState('');
   const [year, setYear] = useState('');
@@ -248,6 +271,21 @@ export default function ApplyPage() {
 
           {!authChecked ? (
             <div className="minimal-card rounded-3xl p-12 text-center text-sm font-mono text-ink-muted">Checking sign-in…</div>
+          ) : windowClosed ? (
+            <div className="minimal-card rounded-3xl p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6 border border-amber-500/20">
+                <Lock className="w-8 h-8" aria-hidden="true" />
+              </div>
+              <span className="font-mono text-xs text-amber-500 uppercase tracking-widest mb-2">{'// Registration closed'}</span>
+              <h1 className="font-heading font-extrabold text-ink text-3xl sm:text-4xl tracking-tight">
+                Applications are closed
+              </h1>
+              <p className="text-sm text-ink-muted mt-4 max-w-lg leading-relaxed">{closedMessage}</p>
+              <div className="mt-8 flex flex-wrap gap-4 justify-center">
+                <Link href="/" className="bg-surface hover:bg-subsurface border border-border text-ink text-xs font-mono font-semibold px-6 py-3 rounded-xl">Return Home</Link>
+                <Link href="/account" className="bg-[#E11D48] !text-white text-xs font-mono font-semibold px-6 py-3 rounded-xl">My Application</Link>
+              </div>
+            </div>
           ) : !user ? (
             <div className="flex flex-col items-center">
               <div className="text-center mb-6">

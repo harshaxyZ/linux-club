@@ -3,6 +3,8 @@ import { adminClient, getSessionUser, isAdmin } from '@/lib/auth';
 import { sanitizeFilterValue } from '@/lib/security';
 import { rateLimitAll } from '@/lib/rate-limit';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
+import { sendEmail } from '@/lib/email';
+import { decisionEmailHtml, decisionSubject, isNotifyingStatus } from '@/lib/email-decision';
 
 const STATUSES = ['pending', 'under_review', 'accepted', 'rejected'] as const;
 const YEARS = ['1st', '2nd', '3rd', '4th'] as const;
@@ -67,10 +69,49 @@ export async function PATCH(req: NextRequest) {
   }
 
   const supabase = adminClient();
+
+  // Read first so an unchanged status does not re-send a decision email when a
+  // reviewer clicks the same button twice.
+  const { data: before } = await supabase
+    .from('applications')
+    .select('status,full_name,email')
+    .eq('id', id)
+    .maybeSingle();
+
   const { error } = await supabase.from('applications').update({ status }).eq('id', id);
   if (error) {
     console.error('Admin status update failed:', error.message);
     return NextResponse.json({ error: 'Update failed.' }, { status: 500, headers: NO_STORE });
   }
-  return NextResponse.json({ success: true }, { headers: NO_STORE });
+
+  const previous = (before as { status?: string } | null)?.status ?? null;
+  const changed = previous !== status;
+  let notified: 'sent' | 'failed' | 'not_applicable' = 'not_applicable';
+  let notifyError: string | null = null;
+
+  if (changed && isNotifyingStatus(status) && before) {
+    const applicant = before as { full_name?: string; email?: string };
+    if (applicant.email) {
+      try {
+        const result = await sendEmail({
+          to: applicant.email,
+          subject: decisionSubject(status),
+          html: decisionEmailHtml(status, applicant.full_name ?? 'there'),
+        });
+        notified = 'sent';
+        console.log(`Decision email (${status}) delivered by ${result.channel}`);
+      } catch (mailErr) {
+        // The status change already succeeded; surface the delivery failure
+        // instead of rolling it back or hiding it.
+        notified = 'failed';
+        notifyError = mailErr instanceof Error ? mailErr.message : String(mailErr);
+        console.error(`Decision email (${status}) failed on every channel:`, notifyError);
+      }
+    }
+  }
+
+  return NextResponse.json(
+    { success: true, status, previous, changed, notified, notifyError },
+    { headers: NO_STORE }
+  );
 }

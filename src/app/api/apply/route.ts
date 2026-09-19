@@ -16,6 +16,7 @@ import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
 import { findApplicationFor } from '@/lib/applications';
+import { applicationsAccepting, closedMessageFor, getAppSettings } from '@/lib/settings';
 import {
   COURSES,
   EXTRA_LABELS,
@@ -46,6 +47,13 @@ export async function POST(req: NextRequest) {
 
     const user = await getSessionUser();
     if (!user) return bad('Sign in required.', 401);
+
+    // Enforced here, not just hidden in the UI: the window is what actually
+    // decides whether a submission is accepted.
+    const settings = await getAppSettings();
+    if (!applicationsAccepting(settings)) {
+      return bad(closedMessageFor(settings), 403);
+    }
 
     // Identity is anchored to the address the user proved control of (Google
     // or email OTP), never to the free-text field in the form.

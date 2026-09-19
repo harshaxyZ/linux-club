@@ -14,7 +14,8 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { deviceHeaders } from '../../lib/device-client';
 import { useTheme } from '../../components/theme/ThemeProvider';
 import { StatsPanel } from '../../components/admin/StatsPanel';
-import { ApplicantDetails } from '../../components/admin/ApplicantDetails';
+import { ApplicantDetails, type StatusFeedback } from '../../components/admin/ApplicantDetails';
+import { ApplicationWindowPanel } from '../../components/admin/ApplicationWindowPanel';
 import { studentIdLabel } from '../../lib/form-options';
 import type { Application } from '../../lib/application-types';
 
@@ -45,6 +46,8 @@ export default function AdminPage() {
   const [actionError, setActionError] = useState('');
   const [pageError, setPageError] = useState('');
   const [statsKey, setStatsKey] = useState(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [statusFeedback, setStatusFeedback] = useState<StatusFeedback | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
   useEffect(() => setMounted(true), []);
@@ -151,21 +154,31 @@ export default function AdminPage() {
 
   const updateStatus = async (id: string, status: Application['status']) => {
     setActionError('');
+    setSavingId(id);
     try {
       const res = await fetch('/api/admin/applications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...deviceHeaders() },
         body: JSON.stringify({ id, status }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setActionError('Status update failed.');
+        setActionError(data.error || 'Status update failed.');
         return;
       }
       setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
       if (selectedApp?.id === id) setSelectedApp({ ...selectedApp, status });
+      setStatusFeedback({
+        id,
+        status,
+        changed: data.changed !== false,
+        notified: data.notified ?? 'not_applicable',
+      });
       setStatsKey((k) => k + 1);
     } catch {
       setActionError('Network error.');
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -285,6 +298,7 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 relative z-10">
+        <ApplicationWindowPanel />
         <StatsPanel refreshKey={statsKey} />
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 minimal-card p-6 rounded-3xl">
           <div>
@@ -357,7 +371,7 @@ export default function AdminPage() {
           {/* Side panel on large screens. Below that the same details open as a modal. */}
           <div className="hidden lg:block lg:col-span-5 minimal-card rounded-3xl p-6">
             {selectedApp ? (
-              <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} />
+              <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} savingId={savingId} feedback={statusFeedback} />
             ) : (
               <div className="min-h-[300px] flex flex-col items-center justify-center text-ink-muted">
                 <Terminal className="w-10 h-10 opacity-30 mb-3" aria-hidden="true" />
@@ -391,7 +405,7 @@ export default function AdminPage() {
                 <X className="w-4 h-4" aria-hidden="true" /><span>Close</span>
               </button>
             </div>
-            <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} />
+            <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} savingId={savingId} feedback={statusFeedback} />
           </div>
         </div>
       )}
