@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email';
-import { emailDetailTable, emailLayout, emailMuted, emailParagraph, emailQuote } from '@/lib/email-template';
+import { emailDetailTable, emailLayout, emailMuted, emailParagraph } from '@/lib/email-template';
 import {
   escapeHtml,
   getClientIp,
@@ -178,35 +178,10 @@ export async function POST(req: NextRequest) {
     }
 
     const e = escapeHtml;
-    const extraRows: Array<[string, string]> = cleanExtra
-      .filter((l: { url: string }) => l.url)
-      .map((l: { label: string; url: string }) => [e(l.label), `<a href="${e(l.url)}" style="color:#E11D48;">${e(l.url)}</a>`] as [string, string]);
 
-    const adminHtml = emailLayout({
-      title: `New application: ${e(fullName)}`,
-      preheader: `${e(fullName)} (${e(year)} year, ${e(course)}) applied to the club.`,
-      bodyHtml: [
-        emailDetailTable([
-          ['Name', e(fullName)],
-          [idLabel, e(usn)],
-          ['Year', `${e(year)} year, section ${e(section)}`],
-          ['Branch', e(course)],
-          ['Email', `<a href="mailto:${e(authEmail)}" style="color:#E11D48;">${e(authEmail)}</a>`],
-          ['Phone', `<a href="tel:${e(phone)}" style="color:#E11D48;">${e(phone)}</a>`],
-          ['GitHub', githubUrl ? `<a href="${e(githubUrl)}" style="color:#E11D48;">${e(githubUrl)}</a>` : 'not provided'],
-          ...(linkedinUrl
-            ? ([['LinkedIn', `<a href="${e(linkedinUrl)}" style="color:#E11D48;">${e(linkedinUrl)}</a>`]] as Array<[string, string]>)
-            : []),
-          ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
-          ...extraRows,
-        ]),
-        emailMuted('Statement of intent'),
-        emailQuote(e(aboutText)),
-      ].join(''),
-      cta: { label: 'Review in console', url: `${env.appUrl}/admin` },
-      note: 'Privacy Policy and Terms were accepted at submission.',
-    });
-
+    // No admin notification on submission, by request: reviewers watch the
+    // console, which shows every application plus live stats, so a mail per
+    // registration was just noise during a drive.
     const applicantHtml = emailLayout({
       title: 'Application received',
       preheader: 'We have your Linux OSS Club application. Here is what happens next.',
@@ -227,14 +202,15 @@ export async function POST(req: NextRequest) {
       note: 'You can withdraw your application at any time from the account page.',
     });
 
-    const admins = env.adminEmails;
     try {
-      if (admins.length > 0) {
-        await sendEmail({ to: admins, subject: `New application: ${fullName} (${usn})`, html: adminHtml });
-      }
-      await sendEmail({ to: authEmail, subject: 'Application received - Linux OpenSource Club', html: applicantHtml });
+      await sendEmail({
+        to: authEmail,
+        subject: 'Application received - Linux OpenSource Club',
+        html: applicantHtml,
+      });
     } catch (mailErr) {
-      console.error('Application email failed (resend+brevo):', mailErr);
+      // The application is already saved; a failed confirmation must not fail it.
+      console.error('Applicant confirmation email failed on every channel:', mailErr);
     }
 
     return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
