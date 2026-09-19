@@ -88,7 +88,20 @@ const nextConfig: NextConfig = {
       {
         // Belt and braces for the PII endpoints; each handler also sets it.
         source: '/api/:path*',
-        headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }],
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
+        // The reviewer console and the applicant's own record should never be
+        // indexed. robots.txt is advisory, this header is not.
+        source: '/:path(admin|account|auth)/:rest*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+      },
+      {
+        source: '/:path(admin|account)',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
       },
     ];
   },
