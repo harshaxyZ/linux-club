@@ -17,6 +17,7 @@ import { resolveDeviceId } from '@/lib/device';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
 import { findApplicationFor } from '@/lib/applications';
 import { applicationsAccepting, closedMessageFor, getAppSettings } from '@/lib/settings';
+import { SITE } from '@/lib/site';
 import {
   COURSES,
   EXTRA_LABELS,
@@ -212,10 +213,10 @@ export async function POST(req: NextRequest) {
           ['Branch', e(course)],
           ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
         ]),
-        emailMuted('Nothing else is needed from you right now. Sessions run 4:00 PM to 6:00 PM on working days in Lab A-306 / A-228, and announcements go out on Discord.'),
+        emailMuted('Nothing else is needed from you right now. Sessions run 4:00 PM to 6:00 PM on working days in Lab A-306 / A-228, and announcements go out on the WhatsApp group and Discord.'),
       ].join(''),
-      cta: { label: 'View your application', url: `${env.appUrl}/account` },
-      note: 'You can withdraw your application at any time from the account page.',
+      cta: { label: 'Join the WhatsApp group', url: SITE.whatsapp },
+      note: `You can view or withdraw your application any time at ${env.appUrl}/account.`,
     });
 
     try {

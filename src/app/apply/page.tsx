@@ -7,7 +7,7 @@ import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
 import { AuthGate } from '../../components/auth/AuthGate';
 import {
   ArrowLeft, CheckCircle2, Plus, Trash2, Code2 as Github,
-  Globe as Linkedin, AlertCircle, Terminal, LogOut, Lock,
+  Globe as Linkedin, AlertCircle, Terminal, LogOut, Lock, MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
@@ -23,6 +23,7 @@ import {
 } from '../../lib/form-options';
 import { GITHUB_PREFIX, LINKEDIN_PREFIX } from '../../lib/handles';
 import { toMobileDigits } from '../../lib/security';
+import { SITE } from '../../lib/site';
 import {
   BRANCH_USN_CODES,
   USN_SUFFIX_LENGTH,
@@ -48,6 +49,21 @@ export default function ApplyPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState('');
+  // Seconds left before the WhatsApp group redirect. The success card is shown
+  // first so the applicant sees the confirmation rather than being thrown out of
+  // the site instantly, and the button stays as a fallback if the browser or an
+  // in-app webview blocks the navigation.
+  const [redirectIn, setRedirectIn] = useState(4);
+
+  useEffect(() => {
+    if (!submitted) return;
+    if (redirectIn <= 0) {
+      window.location.href = SITE.whatsapp;
+      return;
+    }
+    const timer = setTimeout(() => setRedirectIn((n) => n - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [submitted, redirectIn]);
   // Application window, read from the public settings endpoint. The server
   // enforces it too, so this is presentation only.
   const [windowClosed, setWindowClosed] = useState(false);
@@ -315,9 +331,27 @@ export default function ApplyPage() {
                   ? 'The core team received your submission and will review it after the registration drive.'
                   : 'We already have an application linked to this sign-in. The core team will review it after the registration drive.'}
               </p>
-              <p className="mt-4 text-xs font-mono text-ink-muted">Signed in as {user.email}</p>
-              <div className="mt-8 flex gap-4">
+
+              {/* Next step for every applicant: the announcements group. */}
+              <a
+                href={SITE.whatsapp}
+                className="mt-8 inline-flex items-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white text-xs font-mono font-bold uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg"
+              >
+                <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                <span>Join the WhatsApp group</span>
+              </a>
+              {submitted && (
+                <p className="mt-3 text-[11px] font-mono text-ink-muted" aria-live="polite">
+                  {redirectIn > 0
+                    ? `Taking you there in ${redirectIn}…`
+                    : 'Redirecting. If nothing happens, use the button above.'}
+                </p>
+              )}
+
+              <p className="mt-6 text-xs font-mono text-ink-muted">Signed in as {user.email}</p>
+              <div className="mt-6 flex flex-wrap gap-4 justify-center">
                 <Link href="/" className="bg-surface hover:bg-subsurface border border-border text-ink text-xs font-mono font-semibold px-6 py-3 rounded-xl">Return Home</Link>
+                <Link href="/account" className="bg-surface hover:bg-subsurface border border-border text-ink text-xs font-mono font-semibold px-6 py-3 rounded-xl">My Application</Link>
                 <button onClick={signOut} className="text-xs font-mono text-ink-muted hover:text-ink px-4 cursor-pointer inline-flex items-center gap-1.5">
                   <LogOut className="w-3.5 h-3.5" /> Sign out
                 </button>

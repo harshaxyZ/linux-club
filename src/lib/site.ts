@@ -8,6 +8,9 @@ export const SITE = {
   hours: '4:00 PM - 6:00 PM on working days',
   discord: process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/AC276UE4NF',
   github: process.env.NEXT_PUBLIC_GITHUB_URL || 'https://github.com/LOSSC-DBIT',
+  /** Applicants are sent here right after submitting. */
+  whatsapp:
+    process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://chat.whatsapp.com/IF6XtTwx8ZBD52uUIs5Xjz',
 } as const;
 
 export const DOMAINS = [
