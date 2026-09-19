@@ -12,15 +12,30 @@ function optional(name: string, fallback = ''): string {
   return v;
 }
 
+/** Supabase keys/URLs must be plain ASCII — a stray Unicode char (smart quote,
+ *  zero-width space from copy-paste) breaks every fetch with a cryptic error. */
+function ascii(name: string, value: string): string {
+  const clean = value.trim();
+  const badAt = [...clean].findIndex((ch) => ch.codePointAt(0)! > 0xff);
+  if (badAt !== -1) {
+    throw new Error(
+      `${name} contains a non-ASCII character at position ${badAt} (U+${clean
+        .codePointAt(badAt)!
+        .toString(16).toUpperCase()}). Re-paste it as plain text.`
+    );
+  }
+  return clean;
+}
+
 export const env = {
   get supabaseUrl() {
-    return required('NEXT_PUBLIC_SUPABASE_URL');
+    return ascii('NEXT_PUBLIC_SUPABASE_URL', required('NEXT_PUBLIC_SUPABASE_URL'));
   },
   get supabaseAnonKey() {
-    return required('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    return ascii('NEXT_PUBLIC_SUPABASE_ANON_KEY', required('NEXT_PUBLIC_SUPABASE_ANON_KEY'));
   },
   get serviceRoleKey() {
-    return required('SUPABASE_SERVICE_ROLE_KEY');
+    return ascii('SUPABASE_SERVICE_ROLE_KEY', required('SUPABASE_SERVICE_ROLE_KEY'));
   },
   get resendApiKey() {
     return optional('RESEND_API_KEY');

@@ -13,6 +13,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/apply?error=config`);
   }
 
+  if (code && /[^\x00-\xFF]/.test(code)) {
+    console.error('OAuth callback received a non-Latin1 code — dropping it.');
+    const failUrl = new URL(next, origin);
+    failUrl.searchParams.set('error', 'oauth');
+    return NextResponse.redirect(failUrl);
+  }
+
   if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
