@@ -66,6 +66,23 @@ export function allowedAdmissionYears(academicYear: string, now = new Date()): n
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
+/** Characters the student types after the locked prefix: branch code + serial. */
+export const USN_SUFFIX_LENGTH = 5;
+
+/**
+ * The fixed leading part of a USN for an academic year, e.g. `1DB23` for a 4th
+ * year in 2026-27. Empty for first years (no USN yet) or an unknown year.
+ *
+ * Shown as a locked prefix in the form so a student cannot mistype the college
+ * code or the admission year, which are both implied by the year they selected.
+ */
+export function usnPrefix(academicYear: string, now = new Date()): string {
+  if (academicYear === '1st') return '';
+  const year = expectedAdmissionYear(academicYear, now);
+  if (year === null) return '';
+  return `${USN_COLLEGE_CODE}${pad2(year)}`;
+}
+
 /** Example USN for the selected year and branch, used in hints and errors. */
 export function usnExample(academicYear: string, course: string, now = new Date()): string {
   const year = expectedAdmissionYear(academicYear, now);

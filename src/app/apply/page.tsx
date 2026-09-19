@@ -22,7 +22,13 @@ import {
   studentIdLabel,
 } from '../../lib/form-options';
 import { GITHUB_PREFIX, LINKEDIN_PREFIX } from '../../lib/handles';
-import { USN_LENGTH, normalizeUsn, usnExample, validateUsn } from '../../lib/usn';
+import {
+  BRANCH_USN_CODES,
+  USN_SUFFIX_LENGTH,
+  normalizeUsn,
+  usnPrefix,
+  validateUsn,
+} from '../../lib/usn';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +51,7 @@ export default function ApplyPage() {
   const [year, setYear] = useState('');
   const [section, setSection] = useState('');
   const [usn, setUsn] = useState('');
+  const [usnSuffix, setUsnSuffix] = useState('');
   const [course, setCourse] = useState('');
   const [courseOther, setCourseOther] = useState('');
   const [email, setEmail] = useState('');
@@ -59,14 +66,23 @@ export default function ApplyPage() {
 
   const supabase = useMemo(() => createClient(), []);
 
-  // Live USN feedback: only once enough characters are typed, so the field does
-  // not shout at someone mid-entry.
+  // The college code and admission year are locked by the academic year, so the
+  // student only types the branch code and roll number. First years type a plain
+  // registration number into `usn` instead.
+  const usnPrefixValue = useMemo(() => usnPrefix(year), [year]);
+  const studentId = useMemo(
+    () => (year === '1st' ? usn : `${usnPrefixValue}${usnSuffix}`),
+    [year, usn, usnPrefixValue, usnSuffix]
+  );
+
+  // Live USN feedback, only once the full value is typed so the field does not
+  // shout at someone mid-entry.
   const usnError = useMemo(() => {
-    if (!usn || !year || year === '1st') return '';
-    if (usn.length < USN_LENGTH) return '';
-    const check = validateUsn(usn, year, course);
+    if (!year || year === '1st') return '';
+    if (usnSuffix.length < USN_SUFFIX_LENGTH) return '';
+    const check = validateUsn(studentId, year, course);
     return check.ok ? '' : check.error;
-  }, [usn, year, course]);
+  }, [year, usnSuffix, studentId, course]);
 
   const loadMine = useCallback(async () => {
     try {
@@ -151,7 +167,7 @@ export default function ApplyPage() {
     setErrorMsg('');
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     const idLabel = studentIdLabel(year);
-    if (!fullName || !year || !section || !usn || !course || !email || !cleanPhone || !aboutText) {
+    if (!fullName || !year || !section || !studentId || !course || !email || !cleanPhone || !aboutText) {
       setErrorMsg('Please fill in all required fields marked with *');
       return;
     }
@@ -175,12 +191,12 @@ export default function ApplyPage() {
       setErrorMsg('Please tick the box to accept the Privacy Policy and Terms.');
       return;
     }
-    if (!usn.trim()) {
-      setErrorMsg(`${idLabel} is required.`);
+    if (!studentId.trim() || (year !== '1st' && usnSuffix.length < USN_SUFFIX_LENGTH)) {
+      setErrorMsg(`${idLabel} is incomplete.`);
       return;
     }
     if (year !== '1st') {
-      const check = validateUsn(usn, year, course);
+      const check = validateUsn(studentId, year, course);
       if (!check.ok) {
         setErrorMsg(check.error);
         return;
@@ -193,7 +209,7 @@ export default function ApplyPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...deviceHeaders() },
         body: JSON.stringify({
-          fullName, year, section, usn,
+          fullName, year, section, usn: studentId,
           course: course === 'Others' ? courseOther : course,
           courseOther, email, phone: cleanPhone,
           githubHandle, linkedinHandle,
@@ -317,27 +333,49 @@ export default function ApplyPage() {
                     <label htmlFor="student-id" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       {studentIdLabel(year)} *
                     </label>
-                    <input id="student-id" type="text" required value={usn}
-                      // Letters and digits only, and a USN is never longer than 10.
-                      onChange={(e) => setUsn(normalizeUsn(e.target.value).slice(0, year === '1st' ? 20 : USN_LENGTH))}
-                      maxLength={year === '1st' ? 20 : USN_LENGTH}
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder={year === '1st' ? 'College registration number' : usnExample(year, course || 'CSE')}
-                      aria-describedby="student-id-hint"
-                      aria-invalid={usnError ? 'true' : undefined}
-                      className={`w-full px-4 py-3.5 rounded-xl border bg-surface text-sm font-mono text-ink uppercase focus:outline-none ${
-                        usnError ? 'border-amber-500/60 focus:border-amber-500' : 'border-border focus:border-accent'
-                      }`} />
-                    <p id="student-id-hint" className={`mt-1.5 text-[11px] font-mono leading-relaxed ${usnError ? 'text-amber-500' : 'text-ink-muted'}`}>
-                      {usnError
-                        ? usnError
-                        : year === '1st'
-                          ? 'First years usually have no USN yet, so give the registration number from your admission slip.'
-                          : year
-                            ? `${USN_LENGTH} characters, like ${usnExample(year, course || 'CSE')}. ${usn.length}/${USN_LENGTH}`
-                            : 'Select your academic year first.'}
-                    </p>
+                    {year === '1st' ? (
+                      <>
+                        <input id="student-id" type="text" required value={usn}
+                          onChange={(e) => setUsn(normalizeUsn(e.target.value).slice(0, 20))}
+                          maxLength={20} autoComplete="off" spellCheck={false}
+                          placeholder="College registration number"
+                          aria-describedby="student-id-hint"
+                          className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink uppercase focus:outline-none focus:border-accent" />
+                        <p id="student-id-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                          First years have no USN yet, so give the registration number from your admission slip.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        {/* College code and admission year are implied by the selected
+                            academic year, so they are locked rather than typed. */}
+                        <div className={`flex items-stretch rounded-xl border bg-surface overflow-hidden ${
+                          usnError ? 'border-amber-500/60 focus-within:border-amber-500' : 'border-border focus-within:border-accent'
+                        }`}>
+                          <span className="px-3 py-3.5 text-sm font-mono font-bold text-ink bg-subsurface border-r border-border select-none tracking-wider">
+                            {usnPrefixValue || '1DB--'}
+                          </span>
+                          <input id="student-id" type="text" required
+                            value={usnSuffix}
+                            onChange={(e) => setUsnSuffix(normalizeUsn(e.target.value).slice(0, USN_SUFFIX_LENGTH))}
+                            maxLength={USN_SUFFIX_LENGTH}
+                            disabled={!year}
+                            autoComplete="off"
+                            spellCheck={false}
+                            placeholder={`${(BRANCH_USN_CODES[course] ?? ['CS'])[0]}001`}
+                            aria-describedby="student-id-hint"
+                            aria-invalid={usnError ? 'true' : undefined}
+                            className="flex-1 min-w-0 px-3 py-3.5 bg-transparent text-sm font-mono text-ink uppercase tracking-wider placeholder:text-ink-muted/50 focus:outline-none disabled:opacity-60" />
+                        </div>
+                        <p id="student-id-hint" className={`mt-1.5 text-[11px] font-mono leading-relaxed ${usnError ? 'text-amber-500' : 'text-ink-muted'}`}>
+                          {usnError
+                            ? usnError
+                            : !year
+                              ? 'Select your academic year first: it fixes the college code and admission year.'
+                              : `${usnPrefixValue} is set by your ${year} year selection. Type the last ${USN_SUFFIX_LENGTH}: branch code and roll number, e.g. ${(BRANCH_USN_CODES[course] ?? ['CS'])[0]}001. ${usnSuffix.length}/${USN_SUFFIX_LENGTH}`}
+                        </p>
+                      </>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Branch *</label>
