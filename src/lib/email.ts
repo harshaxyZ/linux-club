@@ -44,26 +44,55 @@ function parseFrom(from: string): { name?: string; email: string } {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailArgs): Promise<{ provider: 'resend' | 'brevo' }> {
-  const resendKey = env.resendApiKey;
+  const order: Array<'resend' | 'brevo'> =
+    env.emailPrimary === 'brevo' ? ['brevo', 'resend'] : ['resend', 'brevo'];
+  let lastError: unknown = null;
 
-  if (resendKey) {
+  for (const provider of order) {
     try {
-      const resend = new Resend(resendKey);
-      const { error } = await resend.emails.send({
-        from: env.emailFrom,
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-      });
-      if (error) throw new Error(error.message);
-      return { provider: 'resend' };
+      if (provider === 'resend') {
+        await sendViaResend({ to, subject, html });
+      } else {
+        await sendViaBrevo({ to, subject, html });
+      }
+      return { provider };
     } catch (err) {
-      console.error('Resend send failed, falling back to Brevo:', err);
+      lastError = err;
+      console.error(`Email via ${provider} failed, trying fallback:`, err);
+      logActionableHint(provider, err);
     }
   }
 
-  await sendViaBrevo({ to, subject, html });
-  return { provider: 'brevo' };
+  throw lastError instanceof Error ? lastError : new Error('All email providers failed');
+}
+
+function logActionableHint(provider: 'resend' | 'brevo', err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (provider === 'resend' && /testing emails|verify a domain/i.test(msg)) {
+    console.error(
+      'HINT: Resend is in test mode (onboarding@resend.dev can only mail the account owner). ' +
+        'Verify a domain at resend.com/domains and set EMAIL_FROM to it, or set PRIMARY_EMAIL_PROVIDER=brevo.'
+    );
+  }
+  if (provider === 'brevo' && /authorised_ips|IP address/i.test(msg)) {
+    console.error(
+      'HINT: Brevo rejected this server IP. Authorize it at app.brevo.com/security/authorised_ips ' +
+        'or disable IP restriction for the API key.'
+    );
+  }
+}
+
+async function sendViaResend({ to, subject, html }: SendEmailArgs): Promise<void> {
+  const resendKey = env.resendApiKey;
+  if (!resendKey) throw new Error('RESEND_API_KEY not configured');
+  const resend = new Resend(resendKey);
+  const { error } = await resend.emails.send({
+    from: env.emailFrom,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export function otpEmailHtml(code: string): string {

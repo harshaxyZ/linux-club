@@ -34,6 +34,10 @@ export const env = {
   get emailFrom() {
     return optional('EMAIL_FROM', 'Linux OSS Club <onboarding@resend.dev>');
   },
+  /** Which provider to try first. Use `brevo` while Resend is in test mode. */
+  get emailPrimary(): 'resend' | 'brevo' {
+    return optional('PRIMARY_EMAIL_PROVIDER', 'resend').toLowerCase() === 'brevo' ? 'brevo' : 'resend';
+  },
   get appUrl() {
     return optional('NEXT_PUBLIC_APP_URL', 'https://webuildnow.in');
   },
