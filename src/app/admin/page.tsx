@@ -5,7 +5,7 @@ import { Logo } from '../../components/ui/Logo';
 import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
 import { AuthGate } from '../../components/auth/AuthGate';
 import {
-  Search, UserPlus, LogOut, Lock, Download, AlertCircle,
+  Search, UserPlus, LogOut, Lock, AlertCircle,
   Sun, Moon, ArrowLeft, Terminal, X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import { useTheme } from '../../components/theme/ThemeProvider';
 import { StatsPanel } from '../../components/admin/StatsPanel';
 import { ApplicantDetails, type StatusFeedback } from '../../components/admin/ApplicantDetails';
 import { ApplicationWindowPanel } from '../../components/admin/ApplicationWindowPanel';
+import { ExportMenu } from '../../components/admin/ExportMenu';
 import { studentIdLabel } from '../../lib/form-options';
 import type { Application } from '../../lib/application-types';
 
@@ -213,26 +214,25 @@ export default function AdminPage() {
     }
   };
 
-  const exportCSV = () => {
-    if (apps.length === 0) return;
-    const headers = [
-      'Full Name', 'USN / Reg No', 'Year', 'Course', 'Section', 'Email', 'Phone',
-      'GitHub', 'LinkedIn', 'Languages', 'Status', 'Submitted',
-    ];
-    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = apps.map((a) => [
-      a.full_name, a.usn, a.year, a.course, a.section, a.email, a.phone,
-      a.github_url ?? '', a.linkedin_url ?? '', (a.languages ?? []).join('; '),
-      a.status, new Date(a.created_at).toISOString(),
-    ].map(esc));
-    const blob = new Blob([[headers.map(esc).join(','), ...rows.map((r) => r.join(','))].join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `loss_applications_${Date.now()}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  /**
+   * Re-queries with the current filters and a high cap so an export is never
+   * silently truncated to the tracker's page size. Returns null on failure, and
+   * the menu then falls back to the rows already on screen.
+   */
+  const fetchAllFiltered = useCallback(async (): Promise<Application[] | null> => {
+    try {
+      const params = new URLSearchParams({ limit: '5000' });
+      if (searchQuery) params.set('search', searchQuery);
+      if (selectedYear !== 'All') params.set('year', selectedYear);
+      if (selectedStatus !== 'All') params.set('status', selectedStatus);
+      const res = await fetch(`/api/admin/applications?${params.toString()}`);
+      if (!res.ok) return null;
+      const data = await res.json().catch(() => ({}));
+      return (data.applications ?? null) as Application[] | null;
+    } catch {
+      return null;
+    }
+  }, [searchQuery, selectedYear, selectedStatus]);
 
   if (!adminChecked) {
     return <div className="min-h-screen flex items-center justify-center font-mono text-xs text-ink-muted">Checking session…</div>;
@@ -319,9 +319,11 @@ export default function AdminPage() {
             <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono">
               <option value="All">All Statuses</option><option value="pending">Pending</option><option value="under_review">In Review</option><option value="accepted">Accepted</option><option value="rejected">Rejected</option>
             </select>
-            <button onClick={exportCSV} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono cursor-pointer">
-              <Download className="w-3.5 h-3.5 text-accent" /><span>Export CSV</span>
-            </button>
+            <ExportMenu
+              apps={apps}
+              filters={{ year: selectedYear, status: selectedStatus, search: searchQuery }}
+              fetchAll={fetchAllFiltered}
+            />
           </div>
         </div>
 

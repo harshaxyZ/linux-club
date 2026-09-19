@@ -24,9 +24,13 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search')?.trim() ?? '';
   const year = searchParams.get('year') ?? 'All';
   const status = searchParams.get('status') ?? 'All';
+  // The tracker reads a page; an export asks for everything matching the filters.
+  // Capped so a stray value cannot pull the whole table into memory.
+  const requested = Number.parseInt(searchParams.get('limit') ?? '', 10);
+  const limit = Number.isFinite(requested) ? Math.min(Math.max(requested, 1), 5000) : 500;
 
   const supabase = adminClient();
-  let query = supabase.from('applications').select('*').order('created_at', { ascending: false }).limit(500);
+  let query = supabase.from('applications').select('*').order('created_at', { ascending: false }).limit(limit);
 
   if ((YEARS as readonly string[]).includes(year)) query = query.eq('year', year);
   if ((STATUSES as readonly string[]).includes(status)) query = query.eq('status', status);
