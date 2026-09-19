@@ -12,7 +12,7 @@ export function About() {
         <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider mb-3">
             <Terminal className="w-3.5 h-3.5" />
-            {'// Linux OpenSource Club - '}{SITE.college}
+            {'// OpenSource Students Club - '}{SITE.college}
           </div>
           <h2 className="font-heading font-extrabold text-ink text-3xl sm:text-5xl tracking-tight leading-tight">
             Daily practice. Real pull requests. Monthly accountability.

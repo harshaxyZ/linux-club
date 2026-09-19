@@ -112,7 +112,7 @@ export const env = {
       const name = optional('FROM_NAME');
       return name ? `${name} <${address}>` : address;
     }
-    return 'Linux OSS Club <onboarding@resend.dev>';
+    return 'OSSC <onboarding@resend.dev>';
   },
   /**
    * Optional pin for the first channel to try: a kind (`resend`, `smtp`,

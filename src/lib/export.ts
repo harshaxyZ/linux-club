@@ -67,12 +67,12 @@ export function toJson(apps: Application[]): string {
   return JSON.stringify(apps, null, 2);
 }
 
-/** `loss-applications-2026-09-19_1st-year_pending.csv` */
+/** `ossc-applications-2026-09-19_1st-year_pending.csv` */
 export function exportFilename(
   extension: string,
   filters: { year: string; status: string; search: string }
 ): string {
-  const parts = ['loss-applications', new Date().toISOString().slice(0, 10)];
+  const parts = ['ossc-applications', new Date().toISOString().slice(0, 10)];
   if (filters.year !== 'All') parts.push(`${filters.year}-year`);
   if (filters.status !== 'All') parts.push(filters.status);
   if (filters.search) parts.push(`search-${filters.search.replace(/[^A-Za-z0-9]+/g, '-').slice(0, 20)}`);

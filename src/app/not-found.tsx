@@ -16,7 +16,7 @@ export default function NotFound() {
             <Terminal className="w-7 h-7 text-accent" />
           </div>
           <p className="font-mono text-xs text-accent uppercase tracking-widest mb-2">{'// 404 - route not found'}</p>
-          <h1 className="font-heading font-extrabold text-ink text-3xl tracking-tight">guest@loss: command not found</h1>
+          <h1 className="font-heading font-extrabold text-ink text-3xl tracking-tight">guest@ossc: command not found</h1>
           <p className="text-sm text-ink-muted mt-3">The page you asked for does not exist or was moved.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

@@ -242,7 +242,7 @@ function logActionableHint(kind: ChannelKind, err: unknown): void {
 export function otpEmailHtml(code: string): string {
   return emailLayout({
     title: 'Your sign-in code',
-    preheader: `${code} is your Linux OSS Club sign-in code. Valid for 10 minutes.`,
+    preheader: `${code} is your OSSC sign-in code. Valid for 10 minutes.`,
     bodyHtml: [
       emailParagraph('Enter this one-time passcode to finish signing in:'),
       emailCodeBlock(code),

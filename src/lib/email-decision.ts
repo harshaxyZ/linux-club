@@ -13,8 +13,8 @@ export function isNotifyingStatus(status: string): status is NotifyingStatus {
 
 export function decisionSubject(status: NotifyingStatus): string {
   return status === 'accepted'
-    ? 'You are in - Linux OpenSource Club'
-    : 'Your Linux OpenSource Club application';
+    ? 'You are in - OpenSource Students Club'
+    : 'Your OpenSource Students Club application';
 }
 
 /**
@@ -48,11 +48,11 @@ export function decisionEmailHtml(status: NotifyingStatus, fullName: string): st
 
   return emailLayout({
     title: 'Application not taken forward',
-    preheader: 'An update on your Linux OSS Club application.',
+    preheader: 'An update on your OSSC application.',
     bodyHtml: [
       emailParagraph(`Hey ${name},`),
       emailParagraph(
-        'Thanks for applying to the Linux OpenSource Club. We are not taking your application forward in this drive.'
+        'Thanks for applying to the OpenSource Students Club. We are not taking your application forward in this drive.'
       ),
       emailParagraph(
         'This is not a judgement of your ability. Intake per drive is limited and we weigh current availability and commitment heavily, both of which change.'

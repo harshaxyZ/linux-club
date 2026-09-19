@@ -1,4 +1,4 @@
-# Linux Open Source Coding Club
+# OpenSource Students Club (OSSC)
 
 <div align="center">
 
@@ -11,7 +11,7 @@
 
 <br />
 
-**Official web portal and member application platform for the Linux Open Source Coding Club at Don Bosco Institute of Technology (DBIT).**
+**Official web portal and member application platform for the OpenSource Students Club (OSSC) at Don Bosco Institute of Technology (DBIT).**
 
 [Live Application](https://webuildnow.in) &nbsp;|&nbsp; [Membership Portal](https://webuildnow.in/apply) &nbsp;|&nbsp; [Executive Console](https://webuildnow.in/admin)
 
@@ -21,7 +21,7 @@
 
 ## Overview
 
-The Linux Open Source Coding Club platform is an engineering-focused web application designed with a minimalist monochrome palette and crimson accents. The platform provides interactive system utilities, real-time member registrations, automated email notifications, and an executive administration dashboard.
+The OSSC platform is an engineering-focused web application designed with a minimalist monochrome palette and crimson accents. The platform provides interactive system utilities, real-time member registrations, automated email notifications, and an executive administration dashboard.
 
 ---
 
@@ -95,11 +95,11 @@ A protected management workspace featuring:
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    RESEND_API_KEY=re_your_resend_api_key
    BREVO_API_KEY=xkeysib_your_brevo_key
-   EMAIL_FROM=Linux OSS Club <onboarding@resend.dev>
+   EMAIL_FROM=OSSC <onboarding@resend.dev>
    ADMIN_EMAILS=lead@dbit.edu,core2@dbit.edu
    NEXT_PUBLIC_APP_URL=https://webuildnow.in
    NEXT_PUBLIC_DISCORD_URL=https://discord.gg/AC276UE4NF
-   NEXT_PUBLIC_GITHUB_URL=https://github.com/LOSSC-DBIT
+   NEXT_PUBLIC_GITHUB_URL=https://github.com/OSSC-DBIT
    ```
 
 4. **Run the development server**:

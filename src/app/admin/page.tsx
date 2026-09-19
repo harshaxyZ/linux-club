@@ -281,7 +281,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/"><Logo showText={false} /></Link>
-            <span className="hidden md:block font-heading font-bold text-base">Linux OSS Club <span className="text-accent font-mono text-xs uppercase bg-accent/10 border border-accent/20 px-2 py-0.5 rounded ml-1">Admin</span></span>
+            <span className="hidden md:block font-heading font-bold text-base">OSSC <span className="text-accent font-mono text-xs uppercase bg-accent/10 border border-accent/20 px-2 py-0.5 rounded ml-1">Admin</span></span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
             <button type="button" onClick={toggleTheme} className="p-2 rounded-lg border border-border bg-surface text-ink-muted cursor-pointer" aria-label="Toggle theme">

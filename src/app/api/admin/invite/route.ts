@@ -76,9 +76,9 @@ export async function POST(req: NextRequest) {
   const e = escapeHtml;
   const html = emailLayout({
     title: 'You now have reviewer access',
-    preheader: 'Your address was added to the Linux OSS Club admin console.',
+    preheader: 'Your address was added to the OSSC admin console.',
     bodyHtml: [
-      emailParagraph(`${e(user.email ?? 'A club organiser')} added <strong>${e(email)}</strong> to the Linux OSS Club admin console.`),
+      emailParagraph(`${e(user.email ?? 'A club organiser')} added <strong>${e(email)}</strong> to the OSSC admin console.`),
       emailParagraph('Sign in with Google or an email code using this exact address. Any other address will be refused.'),
       emailMuted('Applicant records are personal data. Please do not export or share them outside the core team.'),
     ].join(''),
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await sendEmail({
       to: email,
-      subject: 'Reviewer access - Linux OpenSource Club',
+      subject: 'Reviewer access - OpenSource Students Club',
       html,
     });
     console.log(`Invite delivered by ${result.channel}`);

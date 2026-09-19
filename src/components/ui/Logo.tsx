@@ -39,22 +39,19 @@ export function Logo({
         <>
           <div className="hidden min-[420px]:flex flex-col">
           <div className="flex items-center gap-1.5 leading-none">
-            <span className="font-heading font-extrabold text-ink text-base tracking-tight">
-              LINUX
-            </span>
             <span className="font-heading font-extrabold text-accent text-base tracking-tight">
               OSS
             </span>
             <span className="font-heading font-extrabold text-ink text-base tracking-tight">
-              CLUB
+              C
             </span>
           </div>
           <span className="font-mono text-[9px] text-ink-muted tracking-widest uppercase mt-0.5">
-            ENGINEERING COLLECTIVE
+            OpenSource Students Club
           </span>
           </div>
           <span className="min-[420px]:hidden font-heading font-extrabold text-ink text-sm tracking-tight leading-none">
-            LOSSC<span className="text-accent">-DBIT</span>
+            OSSC<span className="text-accent">-DBIT</span>
           </span>
         </>
       )}
