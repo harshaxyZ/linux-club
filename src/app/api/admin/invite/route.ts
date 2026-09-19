@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser, isAdmin } from '@/lib/auth';
 import { env } from '@/lib/env';
-import { sendEmail } from '@/lib/email';
+import { emailChannels, sendEmail } from '@/lib/email';
 import { escapeHtml, getClientIp, isValidEmail, normalizeEmail } from '@/lib/security';
 import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const e = escapeHtml;
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: email,
       subject: 'Admin invitation - Linux OpenSource Club',
       html: `
@@ -45,12 +45,27 @@ export async function POST(req: NextRequest) {
           <p>${e(user.email ?? 'An admin')} invited you (${e(email)}) to the Linux OpenSource Club admin console.</p>
           <p>Sign in with Google or an email code using this exact address:</p>
           <p><a href="${e(env.appUrl)}/admin" style="color:#E11D48;">${e(env.appUrl)}/admin</a></p>
-          <p style="color:#64748B;font-size:12px;">If this was not expected, ignore this email. Ask to be added to ADMIN_EMAILS for permanent access.</p>
+          <p style="color:#64748B;font-size:12px;">If this was not expected, ignore this email. Ask an existing reviewer for access.</p>
         </div>`,
     });
+    console.log(`Invite delivered by ${result.channel}`);
   } catch (err) {
-    console.error('Invite email failed:', err);
-    return NextResponse.json({ error: 'Could not send invite.' }, { status: 502, headers: NO_STORE });
+    // Admin-only route, so the response can name the failure: a bare 502 sent
+    // reviewers hunting through logs for what is nearly always a provider-side
+    // sender-verification problem.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Invite email failed on every channel:', message);
+    const configured = emailChannels().map((c) => c.id);
+    return NextResponse.json(
+      {
+        error:
+          configured.length === 0
+            ? 'No email provider is configured on this deployment. Add RESEND_API_KEYS or SMTP_* to the hosting environment.'
+            : `Email delivery failed on every channel (${configured.join(', ')}). Last error: ${message.slice(0, 200)}`,
+        channels: configured,
+      },
+      { status: configured.length === 0 ? 500 : 502, headers: NO_STORE }
+    );
   }
 
   try {
