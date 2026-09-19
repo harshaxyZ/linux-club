@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { deviceHeaders } from '../../lib/device-client';
 import { useTheme } from '../../components/theme/ThemeProvider';
 
@@ -65,9 +66,11 @@ export default function AdminPage() {
         const host = params.get('host');
         if (err) {
           setPageError(
-            host
-              ? `Google sign-in did not complete (on ${host} — use https://webuildnow.in without www). Try again or use an email code.`
-              : 'Google sign-in did not complete. Try again or use an email code.'
+            err === 'stale'
+              ? 'That login attempt expired after too many retries. Click Google sign-in once and complete it in one go, or use an email code.'
+              : host
+                ? `Google sign-in did not complete (on ${host} — use https://webuildnow.in without www). Try again or use an email code.`
+                : 'Google sign-in did not complete. Try again or use an email code.'
           );
           window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -87,7 +90,7 @@ export default function AdminPage() {
       setAdminChecked(true);
     }
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       const u = session?.user;
       setAuthed(!!u);
       setUserEmail(u?.email ?? '');

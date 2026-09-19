@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../../lib/supabase/client';
 import { BackgroundGrid } from '../../../components/ui/BackgroundGrid';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { Terminal } from 'lucide-react';
 
 /**
@@ -39,8 +40,8 @@ export default function AuthCallbackPage() {
           router.replace(
             `${next}?error=${reason}&host=${encodeURIComponent(host)}&cookies=${
               sbNames.length > 0 ? '1' : '0'
-            }&detail=${encodeURIComponent((detail || 'unknown').slice(0, 120))}&slots=${encodeURIComponent(
-              sbNames.join(',').slice(0, 160)
+            }&detail=${encodeURIComponent((detail || 'unknown').slice(0, 200))}&slots=${encodeURIComponent(
+              sbNames.join(',').slice(0, 1000)
             )}`
           ),
         900
@@ -51,15 +52,32 @@ export default function AuthCallbackPage() {
       fail('oauth');
       return;
     }
-    if (!params.get('code')) {
+    const code = params.get('code');
+    if (!code) {
       fail('oauth');
       return;
+    }
+
+    // Stale-flow guard: with several Google attempts in flight, the callback
+    // can carry a flow id whose verifier slot was evicted (max 5 concurrent).
+    // Slot lookup is exact-match with no fallback, so fail loudly instead of
+    // burning the single-use code on a hopeless exchange.
+    const flowId = params.get('sb_flow_id');
+    if (flowId && typeof document !== 'undefined') {
+      const names = document.cookie
+        .split(';')
+        .map((c) => c.split('=')[0].trim());
+      const hasSlot = names.some((n) => n.startsWith('sb-') && n.includes(flowId));
+      if (!hasSlot) {
+        fail('stale', `flow ${flowId.slice(0, 8)}… has no stored verifier (too many attempts?)`);
+        return;
+      }
     }
 
     let done = false;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (done) return;
       if (event === 'SIGNED_IN' && session?.user) {
         done = true;

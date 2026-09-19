@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
-import type { User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +79,8 @@ export default function ApplyPage() {
         const diag = detail || slots ? ` [${[detail, slots].filter(Boolean).join(' | ')}]` : '';
         if (err === 'exchange') {
           setPageError(`Google sign-in reached us but the session could not be completed${where}.${cookieHint} Try again or use an email code.${diag}`);
+        } else if (err === 'stale') {
+          setPageError(`That login attempt expired — this happens after retrying Google sign-in several times. Please click Google sign-in once and complete it in one go.${where}${diag}`);
         } else if (err) {
           setPageError('Sign-in did not complete. Please try again or use an email code.');
         }
@@ -95,7 +97,7 @@ export default function ApplyPage() {
       setAuthChecked(true);
     }
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {

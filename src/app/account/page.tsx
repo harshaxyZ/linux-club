@@ -9,6 +9,7 @@ import { ExternalLink, Trash2, ArrowLeft, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,7 @@ export default function AccountPage() {
       setChecked(true);
     }
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, s: Session | null) => {
       const email = s?.user?.email ?? null;
       setUserEmail(email);
       if (email) loadMine();
