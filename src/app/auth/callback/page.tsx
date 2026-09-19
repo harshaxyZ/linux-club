@@ -8,8 +8,10 @@ import { Terminal } from 'lucide-react';
 
 /**
  * OAuth landing page. Supabase redirects here with `?code=...` (PKCE).
- * The exchange runs in the browser, which holds the PKCE verifier —
- * no server round-trip, so this behaves identically on localhost and prod.
+ * The browser client auto-exchanges the code during initialize(), so this
+ * page only waits for the SIGNED_IN event — it never exchanges twice
+ * (a second exchange burns the single-use code and throws a misleading
+ * "verifier not found" error). Same behavior on localhost and prod.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -18,29 +20,78 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
     const next = params.get('next') || '/apply';
-    const providerError = params.get('error') || params.get('error_description');
+    const host = window.location.host;
 
-    if (providerError || !code) {
-      router.replace(`${next}?error=oauth`);
+    const fail = (reason: string, detail?: string) => {
+      if (detail) console.error('OAuth exchange error:', detail);
+      const hasCookies =
+        typeof document !== 'undefined' && document.cookie.includes('sb-');
+      setFailed(true);
+      setTimeout(
+        () =>
+          router.replace(
+            `${next}?error=${reason}&host=${encodeURIComponent(host)}&cookies=${hasCookies ? '1' : '0'}`
+          ),
+        900
+      );
+    };
+
+    if (params.get('error') || params.get('error_description')) {
+      fail('oauth');
+      return;
+    }
+    if (!params.get('code')) {
+      fail('oauth');
       return;
     }
 
-    let cancelled = false;
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (cancelled) return;
-      if (error) {
-        console.error('OAuth exchange error:', error.message);
-        setFailed(true);
-        const host = window.location.host;
-        setTimeout(() => router.replace(`${next}?error=exchange&host=${encodeURIComponent(host)}`), 1200);
-      } else {
+    let done = false;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (done) return;
+      if (event === 'SIGNED_IN' && session?.user) {
+        done = true;
         router.replace(next);
       }
     });
+
+    // initialize() auto-exchanges ?code=. Verify once after it settles.
+    const timer = setTimeout(async () => {
+      if (done) return;
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          done = true;
+          router.replace(next);
+          return;
+        }
+      } catch {
+        // fall through to single retry
+      }
+      const code = new URLSearchParams(window.location.search).get('code');
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (done) return;
+        if (!error) {
+          done = true;
+          router.replace(next);
+          return;
+        }
+        fail('exchange', error.message);
+      } else {
+        // Code already consumed but no session persisted (cookies blocked?).
+        fail('exchange', 'code consumed, no session persisted');
+      }
+    }, 6000);
+
     return () => {
-      cancelled = true;
+      done = true;
+      clearTimeout(timer);
+      subscription.unsubscribe();
     };
   }, [router, supabase]);
 
