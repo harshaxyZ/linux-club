@@ -49,21 +49,18 @@ export default function ApplyPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState('');
-  // Seconds left before the WhatsApp group redirect. The success card is shown
-  // first so the applicant sees the confirmation rather than being thrown out of
-  // the site instantly, and the button stays as a fallback if the browser or an
-  // in-app webview blocks the navigation.
-  const [redirectIn, setRedirectIn] = useState(4);
 
+  // Straight to the WhatsApp group once the submission succeeds. The short delay
+  // is only so React paints the confirmation card first: that card is what the
+  // applicant lands back on, and its button is the fallback for in-app webviews
+  // and browsers that block scripted navigation.
   useEffect(() => {
     if (!submitted) return;
-    if (redirectIn <= 0) {
-      window.location.href = SITE.whatsapp;
-      return;
-    }
-    const timer = setTimeout(() => setRedirectIn((n) => n - 1), 1000);
+    const timer = setTimeout(() => {
+      window.location.assign(SITE.whatsapp);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [submitted, redirectIn]);
+  }, [submitted]);
   // Application window, read from the public settings endpoint. The server
   // enforces it too, so this is presentation only.
   const [windowClosed, setWindowClosed] = useState(false);
@@ -342,9 +339,7 @@ export default function ApplyPage() {
               </a>
               {submitted && (
                 <p className="mt-3 text-[11px] font-mono text-ink-muted" aria-live="polite">
-                  {redirectIn > 0
-                    ? `Taking you there in ${redirectIn}…`
-                    : 'Redirecting. If nothing happens, use the button above.'}
+                  Opening WhatsApp now. If it does not open, use the button above.
                 </p>
               )}
 
