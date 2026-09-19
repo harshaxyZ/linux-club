@@ -12,10 +12,11 @@ function optional(name: string, fallback = ''): string {
   return v;
 }
 
-/** Supabase keys/URLs must be plain ASCII — a stray Unicode char (smart quote,
- *  zero-width space from copy-paste) breaks every fetch with a cryptic error. */
+/** Supabase keys/URLs must be plain ASCII. A stray Unicode char (smart quote, or
+ *  a UTF-8 BOM added by the hosting provider's env editor) breaks every fetch
+ *  with a cryptic error, so invisible characters are stripped before validating. */
 function ascii(name: string, value: string): string {
-  const clean = value.trim();
+  const clean = value.replace(/[\uFEFF\u200B\u200C\u200D\u2060\u00A0]/g, '').trim();
   const badAt = [...clean].findIndex((ch) => ch.codePointAt(0)! > 0xff);
   if (badAt !== -1) {
     throw new Error(

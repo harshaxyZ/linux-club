@@ -2,10 +2,19 @@ import type { NextConfig } from 'next';
 
 const isDev = process.env.NODE_ENV === 'development';
 
-/** The project's own Supabase origin, so CSP does not have to trust every *.supabase.co. */
+/**
+ * The project's own Supabase origin, so CSP does not have to trust every
+ * *.supabase.co. Invisible characters are stripped first: a UTF-8 BOM in the
+ * hosting provider's env editor made `new URL()` throw here, which silently
+ * downgraded this to the wildcard (and broke the client bundle at the same time).
+ * Kept inline rather than imported so the config has no src/ dependency.
+ */
 function supabaseOrigin(): string {
   try {
-    const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const raw = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '')
+      .replace(/[\uFEFF\u200B\u200C\u200D\u2060\u00A0]/g, '')
+      .trim()
+      .replace(/^["']|["']$/g, '');
     if (raw) return new URL(raw).origin;
   } catch {
     /* fall through to the wildcard below */

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { publicSupabaseConfig } from '@/lib/env-value';
 
 /**
  * OAuth (PKCE) callback. The code is exchanged exactly once, here, on the
@@ -74,8 +75,7 @@ export async function GET(req: NextRequest) {
     return redirect(`${next}?error=oauth`);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const { url: supabaseUrl, anonKey: supabaseAnonKey } = publicSupabaseConfig();
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('[oauth-callback] Supabase env vars missing');
     return redirect(`${next}?error=config`);
