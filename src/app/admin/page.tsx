@@ -244,7 +244,7 @@ export default function AdminPage() {
         <div className="minimal-card rounded-3xl p-8 max-w-md text-center relative z-10">
           <Lock className="w-8 h-8 text-accent mx-auto mb-4" />
           <h1 className="font-heading font-extrabold text-xl text-ink">Access denied</h1>
-          <p className="text-xs font-mono text-ink-muted mt-2">Signed in as {userEmail}. This address is not an admin. Ask to be added to ADMIN_EMAILS.</p>
+          <p className="text-xs font-mono text-ink-muted mt-2">Signed in as {userEmail}. This account does not have reviewer access. Ask a core team member to grant it.</p>
           <button onClick={async () => { await supabase.auth.signOut(); }} className="mt-6 text-xs font-mono text-accent hover:underline cursor-pointer inline-flex items-center gap-1.5">
             <LogOut className="w-3.5 h-3.5" /> Sign out
           </button>

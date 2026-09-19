@@ -1,0 +1,11 @@
+Contact: https://github.com/LOSSC-DBIT/.github/security/advisories/new
+Contact: https://discord.gg/AC276UE4NF
+Expires: 2027-09-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://webuildnow.in/.well-known/security.txt
+Policy: https://webuildnow.in/terms
+
+# Linux Open Source Coding Club, Don Bosco Institute of Technology.
+# This is a student-run club site. Applicant records are personal data:
+# please report anything that exposes them privately through one of the
+# contacts above rather than opening a public issue.

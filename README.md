@@ -150,9 +150,23 @@ linux-club/
 
 ## Security and Data Protection
 
-- **Row-Level Security (RLS)**: Enforced across all PostgreSQL tables (`applications`, `admins`, `admin_invitations`).
-- **Server Route Isolation**: Sensitive database transactions and email dispatches execute on Next.js server routes using isolated service keys.
-- **Route Protection**: The executive administration portal is unlisted and accessible exclusively via `/admin`.
+- **Row-Level Security (RLS)**: Enforced across all PostgreSQL tables (`applications`, `admins`, `admin_invitations`, `rate_limits`). The `anon` role has no privileges on any of them, `authenticated` cannot write `status` or `user_id` (column-level grants), and `public.is_admin()` is executable only by `authenticated`.
+- **Server Route Isolation**: Sensitive database transactions and email dispatches execute on Next.js server routes using isolated service keys. The service-role client bypasses RLS, so every route performs its own authorization check first.
+- **Identity**: An application is keyed to the address the applicant proved control of (Google or email OTP), never to the email typed into the form.
+- **Abuse controls**: Durable per-user, per-IP and per-device rate limits stored in Postgres (`rate_limit_hit`), same-origin enforcement on every mutating route, and a device cookie.
+- **Headers**: CSP, HSTS with preload, `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy, Permissions-Policy, plus `no-store` and `noindex` on every route that returns or displays applicant data.
+- **Route Protection**: `/admin` and `/account` are `noindex, nofollow, noarchive` and disallowed in `robots.txt`.
+
+### Operator checklist
+
+Things the code cannot do for you. Verify after any new deployment or project restore:
+
+1. **Apply all migrations** in `supabase/migrations/` in filename order (`supabase db push`, or paste each file in the SQL editor). Without them the durable rate limiter silently falls back to a per-instance in-memory limiter, and the function grants stay open.
+2. **Disable public sign-ups**: Supabase Dashboard, Authentication, Sign In / Providers, turn off *Allow new users to sign up*. Google OAuth and the app's OTP flow both create users through the admin API and are unaffected. Leave the Email provider itself enabled or OTP verification breaks.
+3. **Redirect URLs**: Authentication, URL Configuration. Site URL `https://webuildnow.in`, and Redirect URLs must include `https://webuildnow.in/auth/callback` (plus `http://localhost:3000/**` for local work).
+4. **Email providers**: Resend, SMTP2GO (`SMTP_*`) and Brevo are tried in **round-robin** order, so one provider being down or IP-blocked does not stop sign-in codes. Leave `PRIMARY_EMAIL_PROVIDER` empty for pure rotation, or set it to `resend` / `smtp` / `brevo` to pin the first attempt. Each provider needs its sending domain verified on its own side: SMTP2GO under *Sending > Verified Senders*, Resend under *Domains*, Brevo under *Senders & IPs*. An unverified domain returns `550 From header sender domain not verified` and the rotation moves on to the next provider.
+5. **Email authentication DNS**: the apex domain needs an SPF record covering every provider actually used, and each provider needs its DKIM records published. `_dmarc.webuildnow.in` is `p=quarantine`, so any provider without aligned DKIM or SPF has its mail quarantined. Resend is set up on `send.webuildnow.in`; SMTP2GO and Brevo are not yet.
+6. **Environment variables**: paste them as plain text. A UTF-8 BOM or zero-width character in `NEXT_PUBLIC_SUPABASE_URL` breaks every Supabase call in the deployed bundle. The code strips these defensively, but clean values are better. On PowerShell use `Set-Content -Encoding utf8NoBOM`.
 
 ---
 
