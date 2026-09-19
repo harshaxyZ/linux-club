@@ -22,6 +22,7 @@ import {
   studentIdLabel,
 } from '../../lib/form-options';
 import { GITHUB_PREFIX, LINKEDIN_PREFIX } from '../../lib/handles';
+import { toMobileDigits } from '../../lib/security';
 import {
   BRANCH_USN_CODES,
   USN_SUFFIX_LENGTH,
@@ -165,7 +166,7 @@ export default function ApplyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const cleanPhone = toMobileDigits(phone);
     const idLabel = studentIdLabel(year);
     if (!fullName || !year || !section || !studentId || !course || !email || !cleanPhone || !aboutText) {
       setErrorMsg('Please fill in all required fields marked with *');
@@ -428,14 +429,21 @@ export default function ApplyPage() {
                   <div>
                     <label htmlFor="phone" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Phone *</label>
                     <input id="phone" type="tel" required inputMode="numeric" autoComplete="tel" maxLength={10}
+                      pattern="[6-9][0-9]{9}"
                       value={phone}
-                      // Digits only: pasted numbers with +91, spaces or dashes are cleaned here.
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(-10))}
+                      // Refuse non-digit keystrokes outright, so nothing even appears
+                      // in the field, and still normalize on change to cover paste,
+                      // autofill and mobile keyboards that bypass beforeinput.
+                      onBeforeInput={(e) => {
+                        const data = (e.nativeEvent as InputEvent).data;
+                        if (data && /\D/.test(data)) e.preventDefault();
+                      }}
+                      onChange={(e) => setPhone(toMobileDigits(e.target.value))}
                       placeholder="10-digit mobile"
                       aria-describedby="phone-hint"
                       className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink focus:outline-none focus:border-accent" />
                     <p id="phone-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
-                      Digits only, no +91. {phone.length}/10
+                      Digits only. A pasted +91 or 0 prefix is removed automatically. {phone.length}/10
                     </p>
                   </div>
                 </div>

@@ -23,8 +23,25 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+/**
+ * Reduces anything a student might type or paste to bare mobile digits.
+ *
+ * Handles the common shapes: "+91 98765 43210", "091-98765-43210",
+ * "(987) 654-3210". A leading country code or trunk zero is dropped rather than
+ * the number being truncated from the wrong end, then the first 10 digits win so
+ * typing an extra digit is ignored instead of silently shifting the number.
+ */
+export function toMobileDigits(raw: string): string {
+  let digits = String(raw ?? '').replace(/\D/g, '');
+  // Leading zeros are never significant in an Indian mobile number (they start
+  // 6-9), so drop trunk and 00-style international prefixes first.
+  digits = digits.replace(/^0+/, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  return digits.slice(0, 10);
+}
+
 export function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, '').slice(-10);
+  return toMobileDigits(phone);
 }
 
 export function isValidPhone(phone: string): boolean {
