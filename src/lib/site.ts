@@ -1,6 +1,7 @@
 export const SITE = {
   name: 'OpenSource Students Club',
   shortName: 'OSSC',
+  tagline: 'Engineering Beyond the Classroom',
   college: 'Don Bosco Institute of Technology, Bangalore',
   dept: 'Department of Computer Science and Engineering',
   facultyCoordinator: 'Dr. Dheeraj',

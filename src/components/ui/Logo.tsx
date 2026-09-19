@@ -1,4 +1,5 @@
 import React from 'react';
+import { SITE } from '../../lib/site';
 
 export function Logo({ 
   className = "w-7 h-7", 
@@ -44,8 +45,8 @@ export function Logo({
               <span className="text-ink">C</span>
               <span className="text-ink-muted font-mono text-[11px] ml-1.5">DBIT</span>
             </div>
-            <span className="font-mono text-[9px] text-ink-muted tracking-widest uppercase mt-0.5">
-              OpenSource Students Club
+            <span className="font-mono text-[9px] text-ink-muted tracking-wider uppercase mt-0.5 whitespace-nowrap">
+              {SITE.tagline}
             </span>
           </div>
           <span className="min-[420px]:hidden font-heading font-extrabold text-ink text-sm tracking-tight leading-none">

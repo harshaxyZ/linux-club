@@ -22,7 +22,7 @@ export function Hero() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="font-heading font-extrabold text-4xl sm:text-6xl lg:text-7xl tracking-tight leading-[1.08] max-w-4xl mx-auto text-ink"
         >
-          The Engineering Collective For{' '}
+          Engineering Beyond the Classroom{' '}
           <span className="block mt-2 text-accent">
             <TypewriterEffect
               words={[
