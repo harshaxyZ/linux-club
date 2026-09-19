@@ -1,17 +1,3 @@
-const buckets = new Map<string, { count: number; resetAt: number }>();
-
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const entry = buckets.get(key);
-  if (!entry || now > entry.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (entry.count >= limit) return false;
-  entry.count += 1;
-  return true;
-}
-
 export function getClientIp(headers: Headers): string {
   const forwarded = headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
@@ -52,4 +38,19 @@ export function isValidUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Makes a user string safe to interpolate into a PostgREST `or(...)` filter.
+ *
+ * `or()` takes a comma-separated list of `column.op.value` triples, so a comma,
+ * parenthesis or quote in the value injects extra filter terms. Only characters
+ * that are meaningful in a name/USN/email search are kept; `%` and `_` are
+ * dropped so the value cannot turn into an ILIKE wildcard either.
+ */
+export function sanitizeFilterValue(input: string, maxLength = 80): string {
+  return input
+    .replace(/[^A-Za-z0-9 @.\-+]/g, '')
+    .trim()
+    .slice(0, maxLength);
 }

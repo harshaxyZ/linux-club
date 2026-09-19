@@ -2,16 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email';
-import { escapeHtml, getClientIp, isValidEmail, isValidPhone, isValidUrl, normalizeEmail, normalizePhone, rateLimit } from '@/lib/security';
+import {
+  escapeHtml,
+  getClientIp,
+  isValidEmail,
+  isValidPhone,
+  isValidUrl,
+  normalizeEmail,
+  normalizePhone,
+} from '@/lib/security';
+import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
-
-const YEARS = ['1st', '2nd', '3rd', '4th'];
-const COURSES = ['CSE', 'AI ML', 'AI DS', 'ISE', 'ECE', 'EEE', 'IOT', 'MECHANICAL', 'CIVIL'];
-const EXTRA_LABELS = ['LeetCode', 'HackerRank', 'Codeforces', 'TryHackMe', 'Portfolio', 'Other'];
+import { findApplicationFor } from '@/lib/applications';
+import {
+  COURSES,
+  EXTRA_LABELS,
+  MAX_LANGUAGES,
+  NO_LANGUAGE,
+  YEARS,
+  isKnownLanguage,
+  needsLanguages,
+  studentIdLabel,
+} from '@/lib/form-options';
+import {
+  githubUrlFromHandle,
+  isValidGithubHandle,
+  isValidLinkedinHandle,
+  linkedinUrlFromHandle,
+  normalizeGithubHandle,
+  normalizeLinkedinHandle,
+} from '@/lib/handles';
 
 function bad(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+  return NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST(req: NextRequest) {
@@ -21,13 +45,21 @@ export async function POST(req: NextRequest) {
     const user = await getSessionUser();
     if (!user) return bad('Sign in required.', 401);
 
+    // Identity is anchored to the address the user proved control of (Google
+    // or email OTP), never to the free-text field in the form.
+    const authEmail = normalizeEmail(String(user.email ?? ''));
+    if (!authEmail || !isValidEmail(authEmail)) {
+      return bad('Your sign-in has no verified email address. Sign in with Google or an email code.', 403);
+    }
+
     const ip = getClientIp(req.headers);
     const deviceId = resolveDeviceId(req.headers, req.cookies);
-    const limited =
-      !rateLimit(`apply:user:${user.id}`, 5, 60 * 60 * 1000) ||
-      !rateLimit(`apply:ip:${ip}`, 30, 60 * 60 * 1000) ||
-      (deviceId ? !rateLimit(`apply:device:${deviceId}`, 10, 60 * 60 * 1000) : false);
-    if (limited) {
+    const allowed = await rateLimitAll([
+      { key: `apply:user:${user.id}`, limit: 5, windowMs: 60 * 60 * 1000 },
+      { key: `apply:ip:${ip}`, limit: 30, windowMs: 60 * 60 * 1000 },
+      deviceId ? { key: `apply:device:${deviceId}`, limit: 10, windowMs: 60 * 60 * 1000 } : null,
+    ]);
+    if (!allowed) {
       return bad('Too many submissions. Try again later.', 429);
     }
 
@@ -40,101 +72,103 @@ export async function POST(req: NextRequest) {
     const courseOther = String(data.courseOther ?? '').trim();
     const email = normalizeEmail(String(data.email ?? ''));
     const phone = normalizePhone(String(data.phone ?? ''));
-    const githubUrl = String(data.githubUrl ?? '').trim();
-    const linkedinUrl = String(data.linkedinUrl ?? '').trim();
+    // The form posts bare usernames; a pasted profile URL is tolerated too.
+    const githubHandle = normalizeGithubHandle(String(data.githubHandle ?? data.githubUrl ?? ''));
+    const linkedinHandle = normalizeLinkedinHandle(String(data.linkedinHandle ?? data.linkedinUrl ?? ''));
+    const languagesInput = Array.isArray(data.languages) ? data.languages : [];
     const aboutText = String(data.aboutText ?? '').trim();
     const extraLinks = Array.isArray(data.extraLinks) ? data.extraLinks : [];
     const consent = data.consent === true;
 
     if (!consent) return bad('Privacy Policy and Terms acceptance required.');
 
-    if (!fullName || fullName.length < 3 || fullName.length > 100) return bad('Full name is required (3–100 chars).');
-    if (!YEARS.includes(year)) return bad('Valid academic year required.');
+    if (!fullName || fullName.length < 3 || fullName.length > 100) return bad('Full name is required (3-100 chars).');
+    if (!(YEARS as readonly string[]).includes(year)) return bad('Valid academic year required.');
     if (!section || section.length > 5) return bad('Section required.');
-    if (!usn || usn.length < 5 || usn.length > 20) return bad('Valid USN required.');
-    if (!COURSES.includes(courseRaw) && courseRaw !== 'Others') return bad('Valid branch required.');
+    const idLabel = studentIdLabel(year);
+    if (!usn || usn.length < 4 || usn.length > 25) return bad(`Valid ${idLabel} required.`);
+    if (!(COURSES as readonly string[]).includes(courseRaw) && courseRaw !== 'Others') return bad('Valid branch required.');
     const course = courseRaw === 'Others' ? courseOther.slice(0, 80) : courseRaw;
     if (courseRaw === 'Others' && !course) return bad('Specify your branch.');
     if (!isValidEmail(email)) return bad('Valid email required.');
+    if (email !== authEmail) {
+      return bad(
+        `The email on the form must match the address you signed in with (${authEmail}). Change the form email, or sign in again with ${email}.`,
+        403
+      );
+    }
     if (!isValidPhone(phone)) return bad('Valid 10-digit mobile number required.');
-    if (!isValidUrl(githubUrl) || githubUrl.length > 300) return bad('Valid GitHub URL required.');
-    if (linkedinUrl && (!isValidUrl(linkedinUrl) || linkedinUrl.length > 300)) return bad('LinkedIn URL invalid.');
-    if (!aboutText || aboutText.length < 20 || aboutText.length > 1000) return bad('Statement of intent must be 20–1000 characters.');
+
+    // GitHub is optional now; when given it must look like a real username so the
+    // stored profile URL cannot be a broken or injected link.
+    if (githubHandle && !isValidGithubHandle(githubHandle)) {
+      return bad('GitHub username can only contain letters, digits and single hyphens (max 39 characters).');
+    }
+    if (linkedinHandle && !isValidLinkedinHandle(linkedinHandle)) {
+      return bad('LinkedIn profile name looks invalid. Paste just the part after /in/.');
+    }
+    const githubUrl = githubHandle ? githubUrlFromHandle(githubHandle) : null;
+    const linkedinUrl = linkedinHandle ? linkedinUrlFromHandle(linkedinHandle) : null;
+
+    // Languages are asked of first years only, and the answer is required.
+    let languages: string[] = [];
+    if (needsLanguages(year)) {
+      const cleaned: string[] = (languagesInput as unknown[])
+        .map((l) => String(l ?? '').trim())
+        .filter((l) => isKnownLanguage(l));
+      languages = Array.from(new Set(cleaned)).slice(0, MAX_LANGUAGES);
+      if (languages.length === 0) {
+        return bad(`Select the languages you know, or "${NO_LANGUAGE}" if you have not started yet.`);
+      }
+      if (languages.includes(NO_LANGUAGE) && languages.length > 1) {
+        languages = [NO_LANGUAGE];
+      }
+    }
+
+    if (!aboutText || aboutText.length < 20 || aboutText.length > 1000) return bad('Statement of intent must be 20-1000 characters.');
     if (extraLinks.length > 3) return bad('Max 3 extra links.');
 
     const cleanExtra = extraLinks
       .slice(0, 3)
       .filter((l: unknown) => l && typeof l === 'object')
       .map((l: { label?: unknown; url?: unknown }) => ({
-        label: EXTRA_LABELS.includes(String(l.label)) ? String(l.label) : 'Other',
+        label: (EXTRA_LABELS as readonly string[]).includes(String(l.label)) ? String(l.label) : 'Other',
         url: String(l.url ?? '').trim().slice(0, 300),
       }))
       .filter((l: { url: string }) => l.url === '' || isValidUrl(l.url));
 
     const supabase = adminClient();
-    const authEmail = normalizeEmail(String(user.email ?? ''));
     const row = {
       user_id: user.id,
       full_name: fullName.slice(0, 100),
       year,
       section: section.slice(0, 5),
-      usn: usn.slice(0, 20),
+      usn: usn.slice(0, 25),
       course,
       course_other: courseOther.slice(0, 80),
-      email,
+      email: authEmail,
       phone,
       github_url: githubUrl,
-      linkedin_url: linkedinUrl || null,
+      linkedin_url: linkedinUrl,
+      languages,
       extra_links: cleanExtra,
       about_text: aboutText.slice(0, 1000),
       status: 'pending',
     };
 
-    // Identity: one application per person across login methods.
-    // Google OAuth and email-OTP create distinct auth users for the same email,
-    // so match by user_id first, then by email (form or auth), adopting rows.
-    const { data: ownRow } = await supabase
-      .from('applications')
-      .select('id,email')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
+    // One application per person across login methods: Google OAuth and email
+    // OTP mint different auth users for the same address, so a row is matched by
+    // user_id first and then by the *verified* email, and re-linked to the
+    // current user. Matching on the form email (as this route used to) let
+    // anyone who typed someone else's address claim their row.
+    const existing = await findApplicationFor(supabase, user.id, authEmail, 'id,user_id');
     let dbError = null;
-    if (ownRow) {
-      if (email !== (ownRow as { email: string }).email) {
-        const { data: clash } = await supabase
-          .from('applications')
-          .select('id')
-          .eq('email', email)
-          .neq('id', (ownRow as { id: string }).id)
-          .maybeSingle();
-        if (clash) {
-          return bad('This email already has an application under a different sign-in. Sign in with that method to manage it.', 409);
-        }
-      }
-      const { error } = await supabase
-        .from('applications')
-        .update(row)
-        .eq('id', (ownRow as { id: string }).id);
+    if (existing) {
+      const { error } = await supabase.from('applications').update(row).eq('id', existing.id);
       dbError = error;
     } else {
-      const candidates = [...new Set([email, authEmail].filter(Boolean))];
-      let matchId: string | null = null;
-      for (const c of candidates) {
-        const { data } = await supabase.from('applications').select('id').eq('email', c).maybeSingle();
-        if (data) {
-          matchId = (data as { id: string }).id;
-          break;
-        }
-      }
-      if (matchId) {
-        // Adopt: same person, different login method — link to current user.
-        const { error } = await supabase.from('applications').update(row).eq('id', matchId);
-        dbError = error;
-      } else {
-        const { error } = await supabase.from('applications').insert(row);
-        dbError = error;
-      }
+      const { error } = await supabase.from('applications').insert(row);
+      dbError = error;
     }
 
     if (dbError) {
@@ -151,13 +185,15 @@ export async function POST(req: NextRequest) {
     const adminHtml = `
       <div style="font-family: monospace; background:#050505; color:#fff; padding:24px; border-radius:12px;">
         <h2 style="color:#E11D48;">New application: ${e(fullName)} (${e(usn)})</h2>
-        <p><strong>Year:</strong> ${e(year)} (Sec ${e(section)}) — <strong>Branch:</strong> ${e(course)}</p>
-        <p><strong>Email:</strong> ${e(email)} — <strong>Phone:</strong> ${e(phone)}</p>
-        <p><strong>GitHub:</strong> ${e(githubUrl)}</p>
+        <p><strong>Year:</strong> ${e(year)} (Sec ${e(section)}) - <strong>Branch:</strong> ${e(course)}</p>
+        <p><strong>${e(idLabel)}:</strong> ${e(usn)}</p>
+        <p><strong>Email:</strong> ${e(authEmail)} - <strong>Phone:</strong> ${e(phone)}</p>
+        <p><strong>GitHub:</strong> ${githubUrl ? e(githubUrl) : 'not provided'}</p>
         ${linkedinUrl ? `<p><strong>LinkedIn:</strong> ${e(linkedinUrl)}</p>` : ''}
+        ${languages.length > 0 ? `<p><strong>Languages:</strong> ${e(languages.join(', '))}</p>` : ''}
         ${extraRows}
         <p><strong>Statement:</strong></p><p style="color:#A3A3A3;">${e(aboutText)}</p>
-        <p style="font-size:12px;color:#737373;">Consent: privacy + terms accepted at submission • Review: ${e(env.appUrl)}/admin</p>
+        <p style="font-size:12px;color:#737373;">Consent: privacy + terms accepted at submission - Review: ${e(env.appUrl)}/admin</p>
       </div>`;
 
     const applicantHtml = `
@@ -165,7 +201,7 @@ export async function POST(req: NextRequest) {
         <h2 style="color:#E11D48;">Application received</h2>
         <p>Hey ${e(fullName)},</p>
         <p>We received your Linux OpenSource Club application (USN ${e(usn)}). The core team reviews every application after the registration drive and will reach out on your registered email.</p>
-        <p style="color:#737373;">Daily sessions: ${e('4:00 PM – 6:00 PM')}, Lab A-306 / A-228. Join Discord for updates.</p>
+        <p style="color:#737373;">Daily sessions: ${e('4:00 PM - 6:00 PM')}, Lab A-306 / A-228. Join Discord for updates.</p>
       </div>`;
 
     const admins = env.adminEmails;
@@ -173,12 +209,12 @@ export async function POST(req: NextRequest) {
       if (admins.length > 0) {
         await sendEmail({ to: admins, subject: `New application: ${fullName} (${usn})`, html: adminHtml });
       }
-      await sendEmail({ to: email, subject: 'Application received — Linux OpenSource Club', html: applicantHtml });
+      await sendEmail({ to: authEmail, subject: 'Application received - Linux OpenSource Club', html: applicantHtml });
     } catch (mailErr) {
       console.error('Application email failed (resend+brevo):', mailErr);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('Application API error:', err);
     return bad('Internal error.', 500);

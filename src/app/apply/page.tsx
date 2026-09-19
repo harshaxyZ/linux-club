@@ -12,6 +12,16 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
+import { MultiSelectCombobox } from '../../components/ui/MultiSelectCombobox';
+import {
+  EXTRA_LABELS,
+  MAX_LANGUAGES,
+  NO_LANGUAGE,
+  PROGRAMMING_LANGUAGES,
+  needsLanguages,
+  studentIdLabel,
+} from '../../lib/form-options';
+import { GITHUB_PREFIX, LINKEDIN_PREFIX } from '../../lib/handles';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -38,8 +48,9 @@ export default function ApplyPage() {
   const [courseOther, setCourseOther] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [githubUrl, setGithubUrl] = useState('');
-  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [githubHandle, setGithubHandle] = useState('');
+  const [linkedinHandle, setLinkedinHandle] = useState('');
+  const [languages, setLanguages] = useState<string[]>([]);
   const [extraLinks, setExtraLinks] = useState<ExtraLink[]>([]);
   const [aboutText, setAboutText] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -60,27 +71,24 @@ export default function ApplyPage() {
   const prefillFromUser = useCallback((u: User) => {
     const metaName = String(u.user_metadata?.full_name ?? u.user_metadata?.name ?? '');
     if (metaName) setFullName((v) => v || metaName);
-    if (u.email) setEmail((v) => v || u.email as string);
+    // The API only accepts the verified sign-in address, so mirror it exactly
+    // rather than letting a stale or edited value fail validation.
+    if (u.email) setEmail(u.email);
   }, []);
 
   useEffect(() => {
     async function init() {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
+        // /auth/callback exchanges the code server-side and reports only a
+        // coarse reason; details stay in the server logs instead of the URL.
         const err = params.get('error');
-        const host = params.get('host');
-        const cookiesBlocked = params.get('cookies') === '0';
-        const detail = params.get('detail');
-        const slots = params.get('slots');
-        const where = host ? ` (on ${host} — use https://webuildnow.in without www)` : '';
-        const cookieHint = cookiesBlocked
-          ? ' Your browser is not saving sign-in cookies — enable cookies or open this in Chrome/Safari directly (not an in-app browser).'
-          : '';
-        const diag = detail || slots ? ` [${[detail, slots].filter(Boolean).join(' | ')}]` : '';
         if (err === 'exchange') {
-          setPageError(`Google sign-in reached us but the session could not be completed${where}.${cookieHint} Try again or use an email code.${diag}`);
-        } else if (err === 'stale') {
-          setPageError(`That login attempt expired — this happens after retrying Google sign-in several times. Please click Google sign-in once and complete it in one go.${where}${diag}`);
+          setPageError(
+            'Google sign-in did not complete. If your browser blocks cookies, allow them for this site (in-app browsers often do not), then try again or use an email code.'
+          );
+        } else if (err === 'config') {
+          setPageError('Sign-in is temporarily unavailable. Please try an email code or come back shortly.');
         } else if (err) {
           setPageError('Sign-in did not complete. Please try again or use an email code.');
         }
@@ -132,7 +140,8 @@ export default function ApplyPage() {
     e.preventDefault();
     setErrorMsg('');
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    if (!fullName || !year || !section || !usn || !course || !email || !cleanPhone || !githubUrl || !aboutText) {
+    const idLabel = studentIdLabel(year);
+    if (!fullName || !year || !section || !usn || !course || !email || !cleanPhone || !aboutText) {
       setErrorMsg('Please fill in all required fields marked with *');
       return;
     }
@@ -144,12 +153,20 @@ export default function ApplyPage() {
       setErrorMsg('Please specify your branch/course name.');
       return;
     }
+    if (needsLanguages(year) && languages.length === 0) {
+      setErrorMsg(`First-year applicants: pick the languages you know, or "${NO_LANGUAGE}".`);
+      return;
+    }
     if (aboutText.trim().length < 20) {
       setErrorMsg('Tell us a bit more (min 20 characters).');
       return;
     }
     if (!consent) {
       setErrorMsg('Please tick the box to accept the Privacy Policy and Terms.');
+      return;
+    }
+    if (!usn.trim()) {
+      setErrorMsg(`${idLabel} is required.`);
       return;
     }
 
@@ -162,7 +179,9 @@ export default function ApplyPage() {
           fullName, year, section, usn,
           course: course === 'Others' ? courseOther : course,
           courseOther, email, phone: cleanPhone,
-          githubUrl, linkedinUrl, extraLinks, aboutText, consent,
+          githubHandle, linkedinHandle,
+          languages: needsLanguages(year) ? languages : [],
+          extraLinks, aboutText, consent,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -238,7 +257,7 @@ export default function ApplyPage() {
                     <span>{'// Step 2 — Application Form'}</span>
                   </div>
                   <h1 className="font-heading font-extrabold text-ink text-2xl sm:text-4xl tracking-tight">Apply for Membership</h1>
-                  <p className="text-xs sm:text-sm text-ink-muted mt-2">Signed in as <span className="text-ink font-mono">{user.email}</span>. Name and email are prefilled — edit if needed.</p>
+                  <p className="text-xs sm:text-sm text-ink-muted mt-2">Signed in as <span className="text-ink font-mono">{user.email}</span>. Your application is linked to this address.</p>
                 </div>
                 <button onClick={signOut} className="text-xs font-mono text-ink-muted hover:text-ink shrink-0 cursor-pointer inline-flex items-center gap-1.5">
                   <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -278,9 +297,18 @@ export default function ApplyPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">USN *</label>
-                    <input type="text" required value={usn} onChange={(e) => setUsn(e.target.value.toUpperCase())} placeholder="College USN"
+                    <label htmlFor="student-id" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
+                      {studentIdLabel(year)} *
+                    </label>
+                    <input id="student-id" type="text" required value={usn} onChange={(e) => setUsn(e.target.value.toUpperCase())}
+                      placeholder={year === '1st' ? 'College registration number' : 'College USN'}
+                      aria-describedby="student-id-hint"
                       className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink uppercase focus:outline-none focus:border-accent" />
+                    {year === '1st' && (
+                      <p id="student-id-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                        First years usually have no USN yet, so give the registration number from your admission slip.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Branch *</label>
@@ -307,11 +335,28 @@ export default function ApplyPage() {
                       className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent" />
                   </div>
                 )}
+                {needsLanguages(year) && (
+                  <MultiSelectCombobox
+                    label="Languages you know"
+                    required
+                    options={PROGRAMMING_LANGUAGES}
+                    selected={languages}
+                    onChange={setLanguages}
+                    exclusiveOption={NO_LANGUAGE}
+                    maxSelected={MAX_LANGUAGES}
+                    placeholder="Type to search, e.g. pyt…"
+                    hint={`First years only. Type to filter, Enter to add, Backspace to remove. Pick "${NO_LANGUAGE}" if you have not started yet.`}
+                  />
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Email *</label>
-                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
-                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent" />
+                    <input type="email" required value={email} readOnly aria-readonly="true" placeholder="you@example.com"
+                      aria-describedby="email-locked-hint"
+                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-subsurface text-sm text-ink-muted cursor-not-allowed focus:outline-none" />
+                    <p id="email-locked-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                      Locked to your verified sign-in address. Sign in with a different account to change it.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Phone *</label>
@@ -321,21 +366,40 @@ export default function ApplyPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Github className="w-3.5 h-3.5" /><span>GitHub URL *</span>
+                    <label htmlFor="github-handle" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Github className="w-3.5 h-3.5" /><span>GitHub username (optional)</span>
                     </label>
-                    <input type="url" required value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="https://github.com/username"
-                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent" />
+                    <div className="flex items-stretch rounded-xl border border-border bg-surface focus-within:border-accent overflow-hidden">
+                      <span className="px-3 py-3.5 text-xs font-mono text-ink-muted bg-subsurface border-r border-border select-none whitespace-nowrap">
+                        {GITHUB_PREFIX}
+                      </span>
+                      <input id="github-handle" type="text" inputMode="text" autoComplete="off" spellCheck={false}
+                        value={githubHandle}
+                        onChange={(e) => setGithubHandle(e.target.value.replace(/\s/g, ''))}
+                        placeholder="username"
+                        aria-describedby="github-hint"
+                        className="flex-1 min-w-0 px-3 py-3.5 bg-transparent text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none" />
+                    </div>
+                    <p id="github-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                      Username only. Letters, digits and single hyphens.
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <label htmlFor="linkedin-handle" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Linkedin className="w-3.5 h-3.5 text-accent" /><span>LinkedIn (optional)</span>
                     </label>
-                    <input type="url" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/username"
-                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm text-ink focus:outline-none focus:border-accent" />
+                    <div className="flex items-stretch rounded-xl border border-border bg-surface focus-within:border-accent overflow-hidden">
+                      <span className="px-3 py-3.5 text-xs font-mono text-ink-muted bg-subsurface border-r border-border select-none whitespace-nowrap">
+                        {LINKEDIN_PREFIX}
+                      </span>
+                      <input id="linkedin-handle" type="text" autoComplete="off" spellCheck={false}
+                        value={linkedinHandle}
+                        onChange={(e) => setLinkedinHandle(e.target.value.replace(/\s/g, ''))}
+                        placeholder="your-profile"
+                        className="flex-1 min-w-0 px-3 py-3.5 bg-transparent text-sm text-ink placeholder:text-ink-muted/50 focus:outline-none" />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-4 pt-2">
+                </div>                <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-mono font-semibold text-ink uppercase tracking-wider">Extra Profiles (max 3)</label>
                     {extraLinks.length < 3 && (
@@ -347,9 +411,11 @@ export default function ApplyPage() {
                   {extraLinks.map((link, idx) => (
                     <div key={idx} className="flex flex-col gap-3 sm:flex-row sm:items-center bg-subsurface p-3 rounded-xl border border-border">
                       <select value={link.label} onChange={(e) => changeExtra(idx, 'label', e.target.value)}
+                        aria-label={`Profile type for extra link ${idx + 1}`}
                         className="w-full sm:w-auto px-3 py-2.5 sm:py-1.5 rounded-lg border border-border bg-surface text-xs font-mono text-ink">
-                        <option>LeetCode</option><option>HackerRank</option><option>Codeforces</option>
-                        <option>TryHackMe</option><option>Portfolio</option><option>Other</option>
+                        {EXTRA_LABELS.map((label) => (
+                          <option key={label} value={label}>{label}</option>
+                        ))}
                       </select>
                       <input type="url" value={link.url} onChange={(e) => changeExtra(idx, 'url', e.target.value)} placeholder="Profile URL…"
                         className="w-full flex-1 px-3 py-2.5 sm:py-1.5 rounded-lg border border-border bg-surface text-xs text-ink" />

@@ -13,6 +13,8 @@ import { createClient } from '../../lib/supabase/client';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { deviceHeaders } from '../../lib/device-client';
 import { useTheme } from '../../components/theme/ThemeProvider';
+import { StatsPanel } from '../../components/admin/StatsPanel';
+import { studentIdLabel } from '../../lib/form-options';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +27,9 @@ interface Application {
   section: string;
   email: string;
   phone: string;
-  github_url: string;
+  github_url?: string | null;
   linkedin_url?: string | null;
+  languages?: string[] | null;
   extra_links?: Array<{ label: string; url: string }> | null;
   about_text: string;
   status: 'pending' | 'under_review' | 'accepted' | 'rejected';
@@ -54,6 +57,7 @@ export default function AdminPage() {
   const [inviteDone, setInviteDone] = useState(false);
   const [actionError, setActionError] = useState('');
   const [pageError, setPageError] = useState('');
+  const [statsKey, setStatsKey] = useState(0);
 
   const supabase = useMemo(() => createClient(), []);
   useEffect(() => setMounted(true), []);
@@ -63,14 +67,11 @@ export default function AdminPage() {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
-        const host = params.get('host');
         if (err) {
           setPageError(
-            err === 'stale'
-              ? 'That login attempt expired after too many retries. Click Google sign-in once and complete it in one go, or use an email code.'
-              : host
-                ? `Google sign-in did not complete (on ${host} — use https://webuildnow.in without www). Try again or use an email code.`
-                : 'Google sign-in did not complete. Try again or use an email code.'
+            err === 'config'
+              ? 'Sign-in is temporarily unavailable. Try an email code or come back shortly.'
+              : 'Google sign-in did not complete. Allow cookies for this site, then try again or use an email code.'
           );
           window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -107,7 +108,7 @@ export default function AdminPage() {
       setAdminChecked(true);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const loadApps = useCallback(async () => {
     setLoading(true);
@@ -158,6 +159,7 @@ export default function AdminPage() {
       }
       setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
       if (selectedApp?.id === id) setSelectedApp({ ...selectedApp, status });
+      setStatsKey((k) => k + 1);
     } catch {
       setActionError('Network error.');
     }
@@ -192,9 +194,16 @@ export default function AdminPage() {
 
   const exportCSV = () => {
     if (apps.length === 0) return;
-    const headers = ['Full Name', 'USN', 'Year', 'Course', 'Section', 'Email', 'Phone', 'GitHub', 'Status'];
+    const headers = [
+      'Full Name', 'USN / Reg No', 'Year', 'Course', 'Section', 'Email', 'Phone',
+      'GitHub', 'LinkedIn', 'Languages', 'Status', 'Submitted',
+    ];
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = apps.map((a) => [a.full_name, a.usn, a.year, a.course, a.section, a.email, a.phone, a.github_url, a.status].map(esc));
+    const rows = apps.map((a) => [
+      a.full_name, a.usn, a.year, a.course, a.section, a.email, a.phone,
+      a.github_url ?? '', a.linkedin_url ?? '', (a.languages ?? []).join('; '),
+      a.status, new Date(a.created_at).toISOString(),
+    ].map(esc));
     const blob = new Blob([[headers.map(esc).join(','), ...rows.map((r) => r.join(','))].join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -268,6 +277,7 @@ export default function AdminPage() {
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 relative z-10">
+        <StatsPanel refreshKey={statsKey} />
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8 minimal-card p-6 rounded-3xl">
           <div>
             <h2 className="font-heading font-extrabold text-xl">Applicant Tracker</h2>
@@ -277,7 +287,8 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-ink-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search name, USN, email…"
+              <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search name, USN/Reg No, email…"
+                aria-label="Search applications by name, USN or registration number, or email"
                 className="pl-9 pr-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono focus:outline-none focus:border-accent" />
             </div>
             <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="px-3 py-2 rounded-xl border border-border bg-surface text-xs font-mono">
@@ -330,9 +341,29 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="space-y-3.5 text-xs font-mono">
+                  <div><span className="text-ink-muted uppercase text-[10px] block mb-1">{studentIdLabel(selectedApp.year)}</span><p className="text-ink">{selectedApp.usn}</p></div>
                   <div><span className="text-ink-muted uppercase text-[10px] block mb-1">Contact</span><p className="text-ink">{selectedApp.email} • {selectedApp.phone}</p></div>
+                  {selectedApp.year === '1st' && (
+                    <div>
+                      <span className="text-ink-muted uppercase text-[10px] block mb-1">Languages known</span>
+                      {selectedApp.languages && selectedApp.languages.length > 0 ? (
+                        <ul className="flex flex-wrap gap-1.5">
+                          {selectedApp.languages.map((lang) => (
+                            <li key={lang} className="bg-accent/10 border border-accent/20 text-accent px-2 py-0.5 rounded-full text-[11px]">{lang}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-ink-muted">Not answered</p>
+                      )}
+                    </div>
+                  )}
                   <div><span className="text-ink-muted uppercase text-[10px] block mb-1">GitHub</span>
-                    <a href={selectedApp.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1"><span className="break-all">{selectedApp.github_url}</span><ExternalLink className="w-3 h-3 shrink-0" /></a></div>
+                    {selectedApp.github_url ? (
+                      <a href={selectedApp.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1"><span className="break-all">{selectedApp.github_url}</span><ExternalLink className="w-3 h-3 shrink-0" /></a>
+                    ) : (
+                      <p className="text-ink-muted">Not provided</p>
+                    )}
+                  </div>
                   {selectedApp.linkedin_url && (
                     <div><span className="text-ink-muted uppercase text-[10px] block mb-1">LinkedIn</span>
                       <a href={selectedApp.linkedin_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1"><span className="break-all">{selectedApp.linkedin_url}</span><ExternalLink className="w-3 h-3 shrink-0" /></a></div>

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { updateSession } from './lib/supabase/middleware';
+import { updateSession } from './lib/supabase/session';
 
 function canonicalHost(): string | null {
   try {
@@ -11,10 +11,11 @@ function canonicalHost(): string | null {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // PKCE verifier cookies are host-bound. If the flow starts on www.* and
   // finishes on apex (or vice versa), the callback can't read the verifier
-  // and OAuth dies with "code verifier not found". Pin www-aliases to canonical.
+  // and OAuth dies with "code verifier not found". Pin www-aliases to canonical
+  // so every flow starts and ends on the same host.
   const host = (request.headers.get('host') || '').split(':')[0].toLowerCase();
   const canonical = canonicalHost();
   if (
@@ -34,7 +35,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // /auth/callback is excluded on purpose: it writes its own session cookies
+  // after the PKCE exchange, and a redirect mid-flow would strand the verifier
+  // cookie on the other host.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

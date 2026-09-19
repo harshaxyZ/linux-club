@@ -2,38 +2,43 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser, isAdmin } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { sendEmail } from '@/lib/email';
-import { escapeHtml, getClientIp, isValidEmail, normalizeEmail, rateLimit } from '@/lib/security';
+import { escapeHtml, getClientIp, isValidEmail, normalizeEmail } from '@/lib/security';
+import { rateLimitAll } from '@/lib/rate-limit';
 import { resolveDeviceId } from '@/lib/device';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
+
+const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return crossOriginDenied();
 
   const user = await getSessionUser();
   if (!user || !(await isAdmin(user.email, user.id))) {
-    return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
+    return NextResponse.json({ error: 'Forbidden.' }, { status: 403, headers: NO_STORE });
   }
 
   const ip = getClientIp(req.headers);
   const deviceId = resolveDeviceId(req.headers, req.cookies);
-  const limited =
-    !rateLimit(`invite:${ip}:${user.id}`, 10, 60 * 60 * 1000) ||
-    (deviceId ? !rateLimit(`invite:device:${deviceId}`, 10, 60 * 60 * 1000) : false);
-  if (limited) {
-    return NextResponse.json({ error: 'Too many invites. Try later.' }, { status: 429 });
+  const allowed = await rateLimitAll([
+    { key: `invite:user:${user.id}`, limit: 10, windowMs: 60 * 60 * 1000 },
+    { key: `invite:ip:${ip}`, limit: 20, windowMs: 60 * 60 * 1000 },
+    deviceId ? { key: `invite:device:${deviceId}`, limit: 10, windowMs: 60 * 60 * 1000 } : null,
+  ]);
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many invites. Try later.' }, { status: 429, headers: NO_STORE });
   }
 
   const body = await req.json().catch(() => ({}));
   const email = normalizeEmail(String(body.email ?? ''));
   if (!isValidEmail(email)) {
-    return NextResponse.json({ error: 'Valid email required.' }, { status: 400 });
+    return NextResponse.json({ error: 'Valid email required.' }, { status: 400, headers: NO_STORE });
   }
 
   const e = escapeHtml;
   try {
     await sendEmail({
       to: email,
-      subject: 'Admin invitation — Linux OpenSource Club',
+      subject: 'Admin invitation - Linux OpenSource Club',
       html: `
         <div style="font-family: monospace; background:#0B0E14; color:#F1F5F9; padding:24px; border-radius:12px;">
           <h2 style="color:#E11D48;">Admin invitation</h2>
@@ -45,7 +50,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error('Invite email failed:', err);
-    return NextResponse.json({ error: 'Could not send invite.' }, { status: 502 });
+    return NextResponse.json({ error: 'Could not send invite.' }, { status: 502, headers: NO_STORE });
   }
 
   try {
@@ -67,5 +72,5 @@ export async function POST(req: NextRequest) {
     // invitation record is best-effort; email already sent
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true }, { headers: NO_STORE });
 }

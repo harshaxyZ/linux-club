@@ -21,7 +21,8 @@ interface AppData {
   section: string;
   email: string;
   phone: string;
-  github_url: string;
+  github_url?: string | null;
+  languages?: string[] | null;
   status: string;
   created_at: string;
   about_text: string;
@@ -121,7 +122,12 @@ export default function AccountPage() {
                   <div><span className="block text-[10px] text-ink-muted uppercase mb-1">Email</span><span>{app.email}</span></div>
                   <div><span className="block text-[10px] text-ink-muted uppercase mb-1">Phone</span><span>{app.phone}</span></div>
                   <div><span className="block text-[10px] text-ink-muted uppercase mb-1">GitHub</span>
-                    <a href={app.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1">{app.github_url}<ExternalLink className="w-3.5 h-3.5" /></a></div>
+                    {app.github_url ? (
+                      <a href={app.github_url} target="_blank" rel="noreferrer" className="text-accent hover:underline inline-flex items-center gap-1">{app.github_url}<ExternalLink className="w-3.5 h-3.5" /></a>
+                    ) : (
+                      <span className="text-ink-muted">Not provided</span>
+                    )}
+                  </div>
                   <div><span className="block text-[10px] text-ink-muted uppercase mb-1">Submitted</span><span>{new Date(app.created_at).toLocaleDateString()}</span></div>
                 </div>
                 <div className="pt-4 border-t border-border">
