@@ -4,9 +4,12 @@ node_modules
 .env.local
 .env.*.local
 *.local
+env.download
+*.download
 /env
 .DS_Store
 *.log
 *.tsbuildinfo
 
 .vercel
+
