@@ -22,6 +22,7 @@ import {
   studentIdLabel,
 } from '../../lib/form-options';
 import { GITHUB_PREFIX, LINKEDIN_PREFIX } from '../../lib/handles';
+import { USN_LENGTH, normalizeUsn, usnExample, validateUsn } from '../../lib/usn';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,15 @@ export default function ApplyPage() {
   const [consent, setConsent] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
+
+  // Live USN feedback: only once enough characters are typed, so the field does
+  // not shout at someone mid-entry.
+  const usnError = useMemo(() => {
+    if (!usn || !year || year === '1st') return '';
+    if (usn.length < USN_LENGTH) return '';
+    const check = validateUsn(usn, year, course);
+    return check.ok ? '' : check.error;
+  }, [usn, year, course]);
 
   const loadMine = useCallback(async () => {
     try {
@@ -168,6 +178,13 @@ export default function ApplyPage() {
     if (!usn.trim()) {
       setErrorMsg(`${idLabel} is required.`);
       return;
+    }
+    if (year !== '1st') {
+      const check = validateUsn(usn, year, course);
+      if (!check.ok) {
+        setErrorMsg(check.error);
+        return;
+      }
     }
 
     setLoading(true);
@@ -300,15 +317,27 @@ export default function ApplyPage() {
                     <label htmlFor="student-id" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">
                       {studentIdLabel(year)} *
                     </label>
-                    <input id="student-id" type="text" required value={usn} onChange={(e) => setUsn(e.target.value.toUpperCase())}
-                      placeholder={year === '1st' ? 'College registration number' : 'College USN'}
+                    <input id="student-id" type="text" required value={usn}
+                      // Letters and digits only, and a USN is never longer than 10.
+                      onChange={(e) => setUsn(normalizeUsn(e.target.value).slice(0, year === '1st' ? 20 : USN_LENGTH))}
+                      maxLength={year === '1st' ? 20 : USN_LENGTH}
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder={year === '1st' ? 'College registration number' : usnExample(year, course || 'CSE')}
                       aria-describedby="student-id-hint"
-                      className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink uppercase focus:outline-none focus:border-accent" />
-                    {year === '1st' && (
-                      <p id="student-id-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
-                        First years usually have no USN yet, so give the registration number from your admission slip.
-                      </p>
-                    )}
+                      aria-invalid={usnError ? 'true' : undefined}
+                      className={`w-full px-4 py-3.5 rounded-xl border bg-surface text-sm font-mono text-ink uppercase focus:outline-none ${
+                        usnError ? 'border-amber-500/60 focus:border-amber-500' : 'border-border focus:border-accent'
+                      }`} />
+                    <p id="student-id-hint" className={`mt-1.5 text-[11px] font-mono leading-relaxed ${usnError ? 'text-amber-500' : 'text-ink-muted'}`}>
+                      {usnError
+                        ? usnError
+                        : year === '1st'
+                          ? 'First years usually have no USN yet, so give the registration number from your admission slip.'
+                          : year
+                            ? `${USN_LENGTH} characters, like ${usnExample(year, course || 'CSE')}. ${usn.length}/${USN_LENGTH}`
+                            : 'Select your academic year first.'}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Branch *</label>
@@ -359,9 +388,17 @@ export default function ApplyPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Phone *</label>
-                    <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit mobile"
+                    <label htmlFor="phone" className="block text-xs font-mono font-semibold text-ink uppercase tracking-wider mb-2">Phone *</label>
+                    <input id="phone" type="tel" required inputMode="numeric" autoComplete="tel" maxLength={10}
+                      value={phone}
+                      // Digits only: pasted numbers with +91, spaces or dashes are cleaned here.
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(-10))}
+                      placeholder="10-digit mobile"
+                      aria-describedby="phone-hint"
                       className="w-full px-4 py-3.5 rounded-xl border border-border bg-surface text-sm font-mono text-ink focus:outline-none focus:border-accent" />
+                    <p id="phone-hint" className="mt-1.5 text-[11px] font-mono text-ink-muted">
+                      Digits only, no +91. {phone.length}/10
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

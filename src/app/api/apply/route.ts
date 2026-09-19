@@ -34,6 +34,7 @@ import {
   normalizeGithubHandle,
   normalizeLinkedinHandle,
 } from '@/lib/handles';
+import { validateRegistrationNumber, validateUsn } from '@/lib/usn';
 
 function bad(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -86,11 +87,18 @@ export async function POST(req: NextRequest) {
     if (!fullName || fullName.length < 3 || fullName.length > 100) return bad('Full name is required (3-100 chars).');
     if (!(YEARS as readonly string[]).includes(year)) return bad('Valid academic year required.');
     if (!section || section.length > 5) return bad('Section required.');
-    const idLabel = studentIdLabel(year);
-    if (!usn || usn.length < 4 || usn.length > 25) return bad(`Valid ${idLabel} required.`);
     if (!(COURSES as readonly string[]).includes(courseRaw) && courseRaw !== 'Others') return bad('Valid branch required.');
     const course = courseRaw === 'Others' ? courseOther.slice(0, 80) : courseRaw;
     if (courseRaw === 'Others' && !course) return bad('Specify your branch.');
+
+    // First years have no USN yet, so they give the college registration number.
+    // Everyone else is checked against the VTU structure: college code, admission
+    // year implied by the academic year, and a branch code matching the branch.
+    const idLabel = studentIdLabel(year);
+    const idCheck = year === '1st' ? validateRegistrationNumber(usn) : validateUsn(usn, year, courseRaw);
+    if (!idCheck.ok) return bad(idCheck.error);
+    const studentId = idCheck.usn;
+
     if (!isValidEmail(email)) return bad('Valid email required.');
     if (email !== authEmail) {
       return bad(
@@ -144,7 +152,7 @@ export async function POST(req: NextRequest) {
       full_name: fullName.slice(0, 100),
       year,
       section: section.slice(0, 5),
-      usn: usn.slice(0, 25),
+      usn: studentId,
       course,
       course_other: courseOther.slice(0, 80),
       email: authEmail,
@@ -188,10 +196,10 @@ export async function POST(req: NextRequest) {
       bodyHtml: [
         emailParagraph(`Hey ${e(fullName)},`),
         emailParagraph(
-          `We received your Linux OpenSource Club application (${e(idLabel)} ${e(usn)}). The core team reviews every application after the registration drive closes, and we will reach out on this email address.`
+          `We received your Linux OpenSource Club application (${e(idLabel)} ${e(studentId)}). The core team reviews every application after the registration drive closes, and we will reach out on this email address.`
         ),
         emailDetailTable([
-          [idLabel, e(usn)],
+          [idLabel, e(studentId)],
           ['Year', `${e(year)} year, section ${e(section)}`],
           ['Branch', e(course)],
           ...(languages.length > 0 ? ([['Languages', e(languages.join(', '))]] as Array<[string, string]>) : []),
