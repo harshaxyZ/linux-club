@@ -72,25 +72,70 @@ export async function POST(req: NextRequest) {
       .filter((l: { url: string }) => l.url === '' || isValidUrl(l.url));
 
     const supabase = adminClient();
-    const { error: dbError } = await supabase.from('applications').upsert(
-      {
-        user_id: user.id,
-        full_name: fullName.slice(0, 100),
-        year,
-        section: section.slice(0, 5),
-        usn: usn.slice(0, 20),
-        course,
-        course_other: courseOther.slice(0, 80),
-        email,
-        phone,
-        github_url: githubUrl,
-        linkedin_url: linkedinUrl || null,
-        extra_links: cleanExtra,
-        about_text: aboutText.slice(0, 1000),
-        status: 'pending',
-      },
-      { onConflict: 'user_id' }
-    );
+    const authEmail = normalizeEmail(String(user.email ?? ''));
+    const row = {
+      user_id: user.id,
+      full_name: fullName.slice(0, 100),
+      year,
+      section: section.slice(0, 5),
+      usn: usn.slice(0, 20),
+      course,
+      course_other: courseOther.slice(0, 80),
+      email,
+      phone,
+      github_url: githubUrl,
+      linkedin_url: linkedinUrl || null,
+      extra_links: cleanExtra,
+      about_text: aboutText.slice(0, 1000),
+      status: 'pending',
+    };
+
+    // Identity: one application per person across login methods.
+    // Google OAuth and email-OTP create distinct auth users for the same email,
+    // so match by user_id first, then by email (form or auth), adopting rows.
+    const { data: ownRow } = await supabase
+      .from('applications')
+      .select('id,email')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    let dbError = null;
+    if (ownRow) {
+      if (email !== (ownRow as { email: string }).email) {
+        const { data: clash } = await supabase
+          .from('applications')
+          .select('id')
+          .eq('email', email)
+          .neq('id', (ownRow as { id: string }).id)
+          .maybeSingle();
+        if (clash) {
+          return bad('This email already has an application under a different sign-in. Sign in with that method to manage it.', 409);
+        }
+      }
+      const { error } = await supabase
+        .from('applications')
+        .update(row)
+        .eq('id', (ownRow as { id: string }).id);
+      dbError = error;
+    } else {
+      const candidates = [...new Set([email, authEmail].filter(Boolean))];
+      let matchId: string | null = null;
+      for (const c of candidates) {
+        const { data } = await supabase.from('applications').select('id').eq('email', c).maybeSingle();
+        if (data) {
+          matchId = (data as { id: string }).id;
+          break;
+        }
+      }
+      if (matchId) {
+        // Adopt: same person, different login method — link to current user.
+        const { error } = await supabase.from('applications').update(row).eq('id', matchId);
+        dbError = error;
+      } else {
+        const { error } = await supabase.from('applications').insert(row);
+        dbError = error;
+      }
+    }
 
     if (dbError) {
       console.error('Application DB write failed:', dbError.message);

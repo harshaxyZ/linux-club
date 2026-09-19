@@ -16,6 +16,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
   const [mode, setMode] = useState<'choose' | 'email'>('choose');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [codeLength, setCodeLength] = useState(8);
   const [codeSent, setCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -81,7 +82,10 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
         setError(data.error || 'Could not send code.');
       } else {
         setCodeSent(true);
-        setInfo('6-digit code sent. Valid for 10 minutes.');
+        if (typeof data.length === 'number' && data.length >= 4 && data.length <= 10) {
+          setCodeLength(data.length);
+        }
+        setInfo(`Code sent. Valid for 10 minutes.`);
       }
     } catch {
       setError('Network error. Try again.');
@@ -98,7 +102,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
       const { error } = await supabase.auth.verifyOtp({
         email: email.trim(),
         token: code.trim(),
-        type: 'email',
+        type: 'magiclink',
       });
       if (error) {
         setError(error.message);
@@ -203,7 +207,7 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
             className="w-full bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Mail className="w-3.5 h-3.5" />
-            <span>{loading ? 'Sending…' : 'Send 6-Digit Code →'}</span>
+            <span>{loading ? 'Sending…' : 'Send Code →'}</span>
           </button>
           <button
             type="button"
@@ -217,13 +221,13 @@ export function AuthGate({ purpose, title, subtitle, next }: AuthGateProps) {
         <form onSubmit={handleVerifyCode} className="space-y-4">
           <div>
             <label className="block text-[11px] font-mono text-ink-muted uppercase mb-1">
-              6-digit code sent to {email}
+              {codeLength}-digit code sent to {email}
             </label>
             <input
               type="text"
               required
               inputMode="numeric"
-              maxLength={6}
+              maxLength={codeLength}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               placeholder="••••••"

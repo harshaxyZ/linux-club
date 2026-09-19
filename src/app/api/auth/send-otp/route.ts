@@ -18,7 +18,7 @@ function randomPassword(): string {
  * admin.generateLink, then deliver that code ourselves so the project never
  * depends on Supabase SMTP.
  *
- * Client verifies with: supabase.auth.verifyOtp({ email, token, type: 'email' })
+ * Client verifies with: supabase.auth.verifyOtp({ email, token, type: 'magiclink' })
  *
  * Abuse controls: same-origin POST, required device id, and three rate-limit
  * buckets (per email, per device, per IP).
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const res = NextResponse.json({ success: true });
+    const res = NextResponse.json({ success: true, length: code.length });
     ensureDeviceCookie(res, deviceId, process.env.NODE_ENV === 'production');
     return res;
   } catch (err) {

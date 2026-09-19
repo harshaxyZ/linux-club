@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminClient, getSessionUser } from '@/lib/auth';
-import { rateLimit } from '@/lib/security';
+import { normalizeEmail, rateLimit } from '@/lib/security';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
 
 export async function GET() {
@@ -8,16 +8,24 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
   const supabase = adminClient();
-  const { data, error } = await supabase
+  const { data: byUser } = await supabase
     .from('applications')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle();
+  if (byUser) return NextResponse.json({ application: byUser });
 
-  if (error) {
-    return NextResponse.json({ error: 'Could not load application.' }, { status: 500 });
+  // Same person, different login method (Google vs email OTP share the email).
+  const authEmail = user.email ? normalizeEmail(user.email) : '';
+  if (authEmail) {
+    const { data: byEmail, error } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('email', authEmail)
+      .maybeSingle();
+    if (!error && byEmail) return NextResponse.json({ application: byEmail });
   }
-  return NextResponse.json({ application: data ?? null });
+  return NextResponse.json({ application: null });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -31,9 +39,16 @@ export async function DELETE(req: NextRequest) {
   }
 
   const supabase = adminClient();
-  const { error } = await supabase.from('applications').delete().eq('user_id', user.id);
-  if (error) {
+  const { error: byUserError } = await supabase.from('applications').delete().eq('user_id', user.id);
+  if (byUserError) {
     return NextResponse.json({ error: 'Could not withdraw.' }, { status: 500 });
+  }
+  const authEmail = user.email ? normalizeEmail(user.email) : '';
+  if (authEmail) {
+    const { error } = await supabase.from('applications').delete().eq('email', authEmail);
+    if (error) {
+      return NextResponse.json({ error: 'Could not withdraw.' }, { status: 500 });
+    }
   }
   return NextResponse.json({ success: true });
 }

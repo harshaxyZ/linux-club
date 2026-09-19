@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
 import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
@@ -33,28 +33,33 @@ export default function AccountPage() {
   const [deleted, setDeleted] = useState(false);
   const supabase = useMemo(() => createClient(), []);
 
+  const loadMine = useCallback(async () => {
+    try {
+      const res = await fetch('/api/apply/mine');
+      if (res.ok) {
+        const data = await res.json();
+        setApp(data.application ?? null);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       const email = session?.user?.email ?? null;
       setUserEmail(email);
-      if (email) {
-        try {
-          const res = await fetch('/api/apply/mine');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.application) setApp(data.application);
-          }
-        } catch { /* ignore */ }
-      }
+      if (email) await loadMine();
       setChecked(true);
     }
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setUserEmail(s?.user?.email ?? null);
+      const email = s?.user?.email ?? null;
+      setUserEmail(email);
+      if (email) loadMine();
+      else setApp(null);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase, loadMine]);
 
   const withdraw = async () => {
     if (!confirm('Withdraw your application? This deletes it permanently.')) return;

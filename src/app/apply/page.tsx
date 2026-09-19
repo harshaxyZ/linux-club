@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
 import { BackgroundGrid } from '../../components/ui/BackgroundGrid';
@@ -12,7 +12,6 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../lib/supabase/client';
 import { deviceHeaders } from '../../lib/device-client';
-import { exchangeCodeOnClient } from '../../lib/auth-client';
 import type { User } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -48,53 +47,41 @@ export default function ApplyPage() {
 
   const supabase = useMemo(() => createClient(), []);
 
+  const loadMine = useCallback(async () => {
+    try {
+      const res = await fetch('/api/apply/mine');
+      if (res.ok) {
+        const data = await res.json();
+        setExistingApp(data.application ?? null);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const prefillFromUser = useCallback((u: User) => {
+    const metaName = String(u.user_metadata?.full_name ?? u.user_metadata?.name ?? '');
+    if (metaName) setFullName((v) => v || metaName);
+    if (u.email) setEmail((v) => v || u.email as string);
+  }, []);
+
   useEffect(() => {
     async function init() {
-      let sessionUser = null;
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         const err = params.get('error');
-        const code = params.get('code');
-
-        // Fallback: server exchange failed but the browser holds the PKCE
-        // verifier, so retry the exchange client-side before giving up.
-        if (code) {
-          const clientError = await exchangeCodeOnClient(supabase, code);
-          if (clientError) {
-            console.error('Client code exchange failed:', clientError);
-          } else {
-            const { data: { session: exSession } } = await supabase.auth.getSession();
-            sessionUser = exSession?.user ?? null;
-          }
+        if (err === 'exchange') {
+          setPageError('Google sign-in reached us but the session could not be completed. Try again or use an email code.');
+        } else if (err) {
+          setPageError('Sign-in did not complete. Please try again or use an email code.');
         }
-
-        if (!sessionUser) {
-          if (err === 'exchange') {
-            setPageError('Google sign-in reached us but the session could not be completed. Check the server log for "OAuth exchange error", then try again or use an email code.');
-          } else if (err) {
-            setPageError('Sign-in did not complete. Please try again or use an email code.');
-          }
-        }
-        if (err || code) window.history.replaceState({}, document.title, window.location.pathname);
+        if (err) window.history.replaceState({}, document.title, window.location.pathname);
       }
-      if (!sessionUser) {
-        const { data: { session } } = await supabase.auth.getSession();
-        sessionUser = session?.user ?? null;
-      }
-      const u = sessionUser;
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
       setUser(u);
       if (u) {
         // Prefill from Google profile; user can still edit everything.
-        const metaName = String(u.user_metadata?.full_name ?? u.user_metadata?.name ?? '');
-        if (metaName) setFullName((v) => v || metaName);
-        if (u.email) setEmail((v) => v || u.email as string);
-        try {
-          const res = await fetch('/api/apply/mine');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.application) setExistingApp(data.application);
-          }
-        } catch { /* ignore */ }
+        prefillFromUser(u);
+        await loadMine();
       }
       setAuthChecked(true);
     }
@@ -103,13 +90,16 @@ export default function ApplyPage() {
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
-        const metaName = String(u.user_metadata?.full_name ?? u.user_metadata?.name ?? '');
-        if (metaName) setFullName((v) => v || metaName);
-        if (u.email) setEmail((v) => v || u.email as string);
+        prefillFromUser(u);
+        // Re-check for an existing application on every sign-in (e.g. second
+        // login method for the same email) instead of only on page load.
+        loadMine();
+      } else {
+        setExistingApp(null);
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase, loadMine, prefillFromUser]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -196,7 +186,7 @@ export default function ApplyPage() {
               <div className="text-center mb-6">
                 <span className="font-mono text-xs text-accent uppercase tracking-widest">{'// Step 1 — Sign in'}</span>
                 <h1 className="font-heading font-extrabold text-ink text-3xl mt-1">Sign in to apply</h1>
-                <p className="text-sm text-ink-muted mt-2">Google or a 6-digit email code. Your name and email are prefilled after sign-in.</p>
+                <p className="text-sm text-ink-muted mt-2">Google or an email passcode. Your name and email are prefilled after sign-in.</p>
               </div>
               {pageError && (
                 <div className="mb-4 max-w-md w-full p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono flex items-center gap-2">
