@@ -23,7 +23,14 @@ export function BackgroundGrid() {
 
     window.addEventListener('resize', handleResize);
 
-    const particleCount = Math.min(Math.floor((width * height) / 30000), 40);
+    const reduceMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Fewer particles on small screens: cheaper on mobile GPUs and batteries.
+    const isSmallScreen = width < 640;
+    const particleCount = reduceMotion
+      ? 0
+      : Math.min(Math.floor((width * height) / 30000), isSmallScreen ? 16 : 40);
     const particles = Array.from({ length: particleCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -110,8 +117,20 @@ export function BackgroundGrid() {
 
     render();
 
+    // Pause the loop when the tab is hidden to save mobile battery.
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationFrameId);
+      } else {
+        cancelAnimationFrame(animationFrameId);
+        render();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

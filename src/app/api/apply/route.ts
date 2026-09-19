@@ -1,125 +1,138 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { adminClient, getSessionUser } from '@/lib/auth';
+import { env } from '@/lib/env';
+import { sendEmail } from '@/lib/email';
+import { escapeHtml, getClientIp, isValidEmail, isValidPhone, isValidUrl, normalizeEmail, normalizePhone, rateLimit } from '@/lib/security';
+import { resolveDeviceId } from '@/lib/device';
+import { crossOriginDenied, isSameOrigin } from '@/lib/request';
+
+const YEARS = ['1st', '2nd', '3rd', '4th'];
+const COURSES = ['CSE', 'AI ML', 'AI DS', 'ISE', 'ECE', 'EEE', 'IOT', 'MECHANICAL', 'CIVIL'];
+const EXTRA_LABELS = ['LeetCode', 'HackerRank', 'Codeforces', 'TryHackMe', 'Portfolio', 'Other'];
+
+function bad(message: string, status = 400) {
+  return NextResponse.json({ error: message }, { status });
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    const {
-      fullName,
-      year,
-      section,
-      usn,
-      course,
-      courseOther,
-      email,
-      phone,
-      githubUrl,
-      linkedinUrl,
-      extraLinks,
-      aboutText,
-      userId,
-    } = data;
+    if (!isSameOrigin(req)) return crossOriginDenied();
 
-    if (!fullName || !section || !usn || !email || !phone || !githubUrl || !aboutText) {
-      return NextResponse.json(
-        { error: 'Missing required application fields.' },
-        { status: 400 }
-      );
+    const user = await getSessionUser();
+    if (!user) return bad('Sign in required.', 401);
+
+    const ip = getClientIp(req.headers);
+    const deviceId = resolveDeviceId(req.headers, req.cookies);
+    const limited =
+      !rateLimit(`apply:user:${user.id}`, 5, 60 * 60 * 1000) ||
+      !rateLimit(`apply:ip:${ip}`, 30, 60 * 60 * 1000) ||
+      (deviceId ? !rateLimit(`apply:device:${deviceId}`, 10, 60 * 60 * 1000) : false);
+    if (limited) {
+      return bad('Too many submissions. Try again later.', 429);
     }
 
-    // 1. Insert directly into Supabase database
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://noaucjjnhpxuyyskzihl.supabase.co';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (supabaseUrl && supabaseKey) {
-      try {
-        const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
-        await supabase.from('applications').insert({
-          user_id: userId || '00000000-0000-0000-0000-000000000000',
-          full_name: fullName,
-          year,
-          section,
-          usn,
-          course: course === 'Others' ? courseOther : course,
-          course_other: courseOther,
-          email,
-          phone,
-          github_url: githubUrl,
-          linkedin_url: linkedinUrl,
-          extra_links: extraLinks || [],
-          about_text: aboutText,
-          status: 'pending',
-        });
-      } catch (dbErr) {
-        console.error('Database write log:', dbErr);
-      }
-    }
+    const data = await req.json().catch(() => ({}));
+    const fullName = String(data.fullName ?? '').trim();
+    const year = String(data.year ?? '').trim();
+    const section = String(data.section ?? '').trim().toUpperCase();
+    const usn = String(data.usn ?? '').trim().toUpperCase();
+    const courseRaw = String(data.course ?? '').trim();
+    const courseOther = String(data.courseOther ?? '').trim();
+    const email = normalizeEmail(String(data.email ?? ''));
+    const phone = normalizePhone(String(data.phone ?? ''));
+    const githubUrl = String(data.githubUrl ?? '').trim();
+    const linkedinUrl = String(data.linkedinUrl ?? '').trim();
+    const aboutText = String(data.aboutText ?? '').trim();
+    const extraLinks = Array.isArray(data.extraLinks) ? data.extraLinks : [];
 
-    // 2. Initialize Resend for email dispatch
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      const adminEmail = process.env.ADMIN_EMAIL || 'harsha210108@gmail.com';
+    if (!fullName || fullName.length < 3 || fullName.length > 100) return bad('Full name is required (3–100 chars).');
+    if (!YEARS.includes(year)) return bad('Valid academic year required.');
+    if (!section || section.length > 5) return bad('Section required.');
+    if (!usn || usn.length < 5 || usn.length > 20) return bad('Valid USN required.');
+    if (!COURSES.includes(courseRaw) && courseRaw !== 'Others') return bad('Valid branch required.');
+    const course = courseRaw === 'Others' ? courseOther.slice(0, 80) : courseRaw;
+    if (courseRaw === 'Others' && !course) return bad('Specify your branch.');
+    if (!isValidEmail(email)) return bad('Valid email required.');
+    if (!isValidPhone(phone)) return bad('Valid 10-digit mobile number required.');
+    if (!isValidUrl(githubUrl) || githubUrl.length > 300) return bad('Valid GitHub URL required.');
+    if (linkedinUrl && (!isValidUrl(linkedinUrl) || linkedinUrl.length > 300)) return bad('LinkedIn URL invalid.');
+    if (!aboutText || aboutText.length < 20 || aboutText.length > 1000) return bad('Statement of intent must be 20–1000 characters.');
+    if (extraLinks.length > 3) return bad('Max 3 extra links.');
 
-      // Send Alert Email to Admin
-      await resend.emails.send({
-        from: 'Linux OSS Club <onboarding@resend.dev>',
-        to: adminEmail,
-        subject: `⚡ New Application: ${fullName} (${usn}) - ${course}`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #050505; color: #FFFFFF; padding: 24px; border-radius: 12px; border: 1px solid #262626;">
-            <h2 style="color: #E11D48; margin-top: 0; font-size: 20px;">⚡ New Linux OSS Club Application</h2>
-            <hr style="border: 0; border-top: 1px solid #262626; margin: 16px 0;" />
-            <p style="margin: 6px 0;"><strong>Full Name:</strong> ${fullName}</p>
-            <p style="margin: 6px 0;"><strong>USN:</strong> ${usn}</p>
-            <p style="margin: 6px 0;"><strong>Academic Year:</strong> ${year} Year (Section ${section})</p>
-            <p style="margin: 6px 0;"><strong>Branch / Course:</strong> ${course === 'Others' ? courseOther : course}</p>
-            <p style="margin: 6px 0;"><strong>Email:</strong> <a href="mailto:${email}" style="color: #E11D48;">${email}</a></p>
-            <p style="margin: 6px 0;"><strong>Phone:</strong> ${phone}</p>
-            <p style="margin: 6px 0;"><strong>GitHub:</strong> <a href="${githubUrl}" style="color: #FFFFFF;">${githubUrl}</a></p>
-            ${linkedinUrl ? `<p style="margin: 6px 0;"><strong>LinkedIn:</strong> <a href="${linkedinUrl}" style="color: #A3A3A3;">${linkedinUrl}</a></p>` : ''}
-            <div style="margin-top: 16px; background-color: #0D0D0D; padding: 16px; border-radius: 8px; border: 1px solid #262626;">
-              <strong style="color: #E11D48;">Statement of Interest:</strong>
-              <p style="color: #A3A3A3; white-space: pre-wrap; margin-top: 8px; line-height: 1.5;">${aboutText}</p>
-            </div>
-            <p style="margin-top: 24px; font-size: 12px; color: #737373;">Direct link to review: <a href="https://webuildnow.in/admin" style="color: #E11D48;">https://webuildnow.in/admin</a></p>
-          </div>
-        `,
-      }).catch((e) => {
-        console.error('Failed to send admin notification email:', e);
-      });
+    const cleanExtra = extraLinks
+      .slice(0, 3)
+      .filter((l: unknown) => l && typeof l === 'object')
+      .map((l: { label?: unknown; url?: unknown }) => ({
+        label: EXTRA_LABELS.includes(String(l.label)) ? String(l.label) : 'Other',
+        url: String(l.url ?? '').trim().slice(0, 300),
+      }))
+      .filter((l: { url: string }) => l.url === '' || isValidUrl(l.url));
 
-      // Send Confirmation Email to Applicant
-      await resend.emails.send({
-        from: 'Linux OSS Club <onboarding@resend.dev>',
-        to: email,
-        subject: `Application Received - Linux OSS Club`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #050505; color: #FFFFFF; padding: 24px; border-radius: 12px; border: 1px solid #262626;">
-            <h2 style="color: #E11D48; margin-top: 0; font-size: 20px;">// Linux Open Source Coding Club</h2>
-            <p>Hey ${fullName},</p>
-            <p>We've successfully received your application for club membership.</p>
-            <p>The core review team is evaluating your application details (USN: <strong>${usn}</strong>). You will receive an update once reviews are completed.</p>
-            <br />
-            <p style="color: #737373;">Keep building in public,</p>
-            <p style="color: #E11D48; font-weight: bold;">Linux OSS Club Core Team</p>
-          </div>
-        `,
-      }).catch((e) => {
-        console.error('Failed to send applicant confirmation email:', e);
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Application recorded and email notification dispatched.',
-    });
-  } catch (error: any) {
-    console.error('Application API error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
-      { status: 500 }
+    const supabase = adminClient();
+    const { error: dbError } = await supabase.from('applications').upsert(
+      {
+        user_id: user.id,
+        full_name: fullName.slice(0, 100),
+        year,
+        section: section.slice(0, 5),
+        usn: usn.slice(0, 20),
+        course,
+        course_other: courseOther.slice(0, 80),
+        email,
+        phone,
+        github_url: githubUrl,
+        linkedin_url: linkedinUrl || null,
+        extra_links: cleanExtra,
+        about_text: aboutText.slice(0, 1000),
+        status: 'pending',
+      },
+      { onConflict: 'user_id' }
     );
+
+    if (dbError) {
+      console.error('Application DB write failed:', dbError.message);
+      return bad('Could not save application.', 500);
+    }
+
+    const e = escapeHtml;
+    const extraRows = cleanExtra
+      .filter((l: { url: string }) => l.url)
+      .map((l: { label: string; url: string }) => `<p style="margin:6px 0;"><strong>${e(l.label)}:</strong> ${e(l.url)}</p>`)
+      .join('');
+
+    const adminHtml = `
+      <div style="font-family: monospace; background:#050505; color:#fff; padding:24px; border-radius:12px;">
+        <h2 style="color:#E11D48;">New application: ${e(fullName)} (${e(usn)})</h2>
+        <p><strong>Year:</strong> ${e(year)} (Sec ${e(section)}) — <strong>Branch:</strong> ${e(course)}</p>
+        <p><strong>Email:</strong> ${e(email)} — <strong>Phone:</strong> ${e(phone)}</p>
+        <p><strong>GitHub:</strong> ${e(githubUrl)}</p>
+        ${linkedinUrl ? `<p><strong>LinkedIn:</strong> ${e(linkedinUrl)}</p>` : ''}
+        ${extraRows}
+        <p><strong>Statement:</strong></p><p style="color:#A3A3A3;">${e(aboutText)}</p>
+        <p style="font-size:12px;color:#737373;">Review: ${e(env.appUrl)}/admin</p>
+      </div>`;
+
+    const applicantHtml = `
+      <div style="font-family: monospace; background:#050505; color:#fff; padding:24px; border-radius:12px;">
+        <h2 style="color:#E11D48;">Application received</h2>
+        <p>Hey ${e(fullName)},</p>
+        <p>We received your Linux OpenSource Club application (USN ${e(usn)}). The core team reviews every application after the registration drive and will reach out on your registered email.</p>
+        <p style="color:#737373;">Daily sessions: ${e('4:00 PM – 6:00 PM')}, Lab A-306 / A-228. Join Discord for updates.</p>
+      </div>`;
+
+    const admins = env.adminEmails;
+    try {
+      if (admins.length > 0) {
+        await sendEmail({ to: admins, subject: `New application: ${fullName} (${usn})`, html: adminHtml });
+      }
+      await sendEmail({ to: email, subject: 'Application received — Linux OpenSource Club', html: applicantHtml });
+    } catch (mailErr) {
+      console.error('Application email failed (resend+brevo):', mailErr);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Application API error:', err);
+    return bad('Internal error.', 500);
   }
 }

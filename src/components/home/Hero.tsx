@@ -5,11 +5,10 @@ import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TypewriterEffect } from '../ui/TypewriterEffect';
-import { InteractiveTerminal } from './InteractiveTerminal';
 
 export function Hero() {
   return (
-    <section className="relative min-h-[80vh] flex flex-col items-center justify-center pt-20 pb-20 overflow-hidden">
+    <section className="relative min-h-[80vh] flex flex-col items-center justify-center pt-16 pb-16 sm:pt-20 sm:pb-20 overflow-hidden">
       
       {/* Ambient Crimson Glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[300px] bg-accent/[0.06] blur-[150px] rounded-full pointer-events-none" />
@@ -45,7 +44,8 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6 text-base sm:text-lg text-ink-muted leading-relaxed max-w-2xl mx-auto font-normal"
         >
-          Master low-level systems programming, solve hard algorithmic challenges, and contribute to production open-source software.
+          Master Ubuntu Linux, solve DSA daily, and contribute to real open-source software —
+          mentored by a 10-member core team, evaluated monthly, representing DBIT at hackathons and GSoC.
         </motion.p>
 
         {/* Action CTAs */}
@@ -59,7 +59,7 @@ export function Hero() {
             href="/apply"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#E11D48] hover:bg-[#F43F5E] !text-white font-mono font-bold text-xs uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-lg shadow-rose-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Apply Now</span>
+            <span>Sign In & Apply</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -70,17 +70,6 @@ export function Hero() {
             <span>Explore Tracks</span>
             <ChevronRight className="w-4 h-4 text-ink-muted" />
           </a>
-        </motion.div>
-
-        {/* Interactive CLI Terminal Sandbox */}
-        <motion.div
-          id="terminal"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-16 text-left max-w-4xl mx-auto"
-        >
-          <InteractiveTerminal />
         </motion.div>
 
       </div>

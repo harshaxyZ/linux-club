@@ -55,6 +55,11 @@ html {
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  touch-action: manipulation;
 }
 
 body {
@@ -149,6 +154,28 @@ html.light select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #F1F5F9 inset !important;
   box-shadow: 0 0 0px 1000px #F1F5F9 inset !important;
   caret-color: #0F172A !important;
+}
+
+/* Prevent iOS Safari auto-zoom on form focus (sub-16px inputs trigger it) */
+@media (max-width: 640px) {
+  main input:not([type='checkbox']):not([type='radio']),
+  main textarea,
+  main select,
+  .minimal-card input:not([type='checkbox']):not([type='radio']),
+  .minimal-card textarea,
+  .minimal-card select {
+    font-size: 16px !important;
+  }
+}
+
+/* Respect reduced motion: kill marquee + smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-marquee {
+    animation: none !important;
+  }
 }
 
 /* Custom Sleek Scrollbar */

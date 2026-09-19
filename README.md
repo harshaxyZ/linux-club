@@ -27,8 +27,8 @@ The Linux Open Source Coding Club platform is an engineering-focused web applica
 
 ## Architecture and Core Modules
 
-### 1. Interactive Terminal Sandbox
-A client-side command-line interface emulating Linux terminal operations. Supports custom system commands including `help`, `about`, `events`, `focus`, `apply`, `clear`, and `sudo`.
+### 1. Landing Page
+A monochrome hero with typewriter headline, tech marquee, domain tracks, recruitment process, first-month roadmap, and Discord/GitHub links.
 
 ### 2. Member Application Pipeline (`/apply`)
 A structured intake system featuring:
@@ -94,8 +94,12 @@ A protected management workspace featuring:
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    RESEND_API_KEY=re_your_resend_api_key
-   ADMIN_EMAIL=admin@linuxossclub.org
+   BREVO_API_KEY=xkeysib_your_brevo_key
+   EMAIL_FROM=Linux OSS Club <onboarding@resend.dev>
+   ADMIN_EMAILS=lead@dbit.edu,core2@dbit.edu
    NEXT_PUBLIC_APP_URL=https://webuildnow.in
+   NEXT_PUBLIC_DISCORD_URL=https://discord.gg/AC276UE4NF
+   NEXT_PUBLIC_GITHUB_URL=https://github.com/LOSSC-DBIT
    ```
 
 4. **Run the development server**:

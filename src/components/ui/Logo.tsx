@@ -36,7 +36,8 @@ export function Logo({
       </div>
 
       {showText && (
-        <div className="flex flex-col">
+        <>
+          <div className="hidden min-[420px]:flex flex-col">
           <div className="flex items-center gap-1.5 leading-none">
             <span className="font-heading font-extrabold text-ink text-base tracking-tight">
               LINUX
@@ -51,7 +52,11 @@ export function Logo({
           <span className="font-mono text-[9px] text-ink-muted tracking-widest uppercase mt-0.5">
             ENGINEERING COLLECTIVE
           </span>
-        </div>
+          </div>
+          <span className="min-[420px]:hidden font-heading font-extrabold text-ink text-sm tracking-tight leading-none">
+            LOSSC<span className="text-accent">-DBIT</span>
+          </span>
+        </>
       )}
     </div>
   );
