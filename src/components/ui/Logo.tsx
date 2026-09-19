@@ -38,20 +38,19 @@ export function Logo({
       {showText && (
         <>
           <div className="hidden min-[420px]:flex flex-col">
-          <div className="flex items-center gap-1.5 leading-none">
-            <span className="font-heading font-extrabold text-accent text-base tracking-tight">
-              OSS
+            {/* One word, no gap: the accent only colours the OSS glyphs. */}
+            <div className="font-heading font-extrabold text-base tracking-tight leading-none">
+              <span className="text-accent">OSS</span>
+              <span className="text-ink">C</span>
+              <span className="text-ink-muted font-mono text-[11px] ml-1.5">DBIT</span>
+            </div>
+            <span className="font-mono text-[9px] text-ink-muted tracking-widest uppercase mt-0.5">
+              OpenSource Students Club
             </span>
-            <span className="font-heading font-extrabold text-ink text-base tracking-tight">
-              C
-            </span>
-          </div>
-          <span className="font-mono text-[9px] text-ink-muted tracking-widest uppercase mt-0.5">
-            OpenSource Students Club
-          </span>
           </div>
           <span className="min-[420px]:hidden font-heading font-extrabold text-ink text-sm tracking-tight leading-none">
-            OSSC<span className="text-accent">-DBIT</span>
+            <span className="text-accent">OSS</span>C{' '}
+            <span className="text-ink-muted font-mono text-[11px]">DBIT</span>
           </span>
         </>
       )}

@@ -91,7 +91,7 @@ export function emailLayout({ title, preheader, bodyHtml, cta, note }: EmailLayo
                 <td valign="middle" style="padding-right:12px;">${logoMark()}</td>
                 <td valign="middle">
                   <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.01em;color:${INK};">
-                    <span style="color:${ACCENT};">OSS</span>C
+                    <span style="color:${ACCENT};">OSS</span>C<span style="color:${MUTED};font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:12px;">&nbsp;DBIT</span>
                   </div>
                   <div style="font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};padding-top:3px;">
                     OpenSource Students Club
