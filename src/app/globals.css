@@ -25,14 +25,14 @@
   --input-text: #FFFFFF;
   --input-placeholder: #525252;
 
-  /* Mint accent. Dark theme can use the bright mint for text and fills; text
-     placed *on* the accent must be near-black, because white on mint is about
-     1.9:1 and fails WCAG AA. */
-  --accent: #34D399;
-  --accent-hover: #6EE7B7;
-  --accent-contrast: #04231A;
-  --accent-glow: rgba(52, 211, 153, 0.35);
-  --accent-rgb: 52, 211, 153;
+  /* Ubuntu aubergine. The authentic light aubergine #77216F is only 2.23:1 on a
+     black page, so dark theme uses a tint of it and puts Ubuntu's dark aubergine
+     #2C001E on top of fills (6.8:1). White on this tint is 2.75:1 and fails AA. */
+  --accent: #C08BB8;
+  --accent-hover: #D3A0CD;
+  --accent-contrast: #2C001E;
+  --accent-glow: rgba(192, 139, 184, 0.35);
+  --accent-rgb: 192, 139, 184;
 }
 
 html.light {
@@ -54,13 +54,13 @@ html.light {
   --input-text: #0F172A;
   --input-placeholder: #94A3B8;
 
-  /* A bright mint on a near-white page is unreadable (about 1.8:1), so light mode
-     uses a deep mint that clears AA as text (5.3:1) and takes white on top. */
-  --accent: #047857;
-  --accent-hover: #059669;
+  /* Light theme uses Ubuntu's light aubergine unchanged: 9.0:1 as text on the
+     page and 9.4:1 with white on top. */
+  --accent: #77216F;
+  --accent-hover: #8B2A82;
   --accent-contrast: #FFFFFF;
-  --accent-glow: rgba(4, 120, 87, 0.28);
-  --accent-rgb: 4, 120, 87;
+  --accent-glow: rgba(119, 33, 111, 0.28);
+  --accent-rgb: 119, 33, 111;
 }
 
 html {

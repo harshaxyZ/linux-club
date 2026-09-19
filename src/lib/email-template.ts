@@ -14,10 +14,10 @@ import { SITE } from './site';
 const INK = '#F1F5F9';
 const MUTED = '#8B98A9';
 // Emails cannot read CSS variables and cannot switch theme, so the bright
-// mint is fixed here: it sits on the dark card (9.5:1) and takes near-black text
-// on filled buttons.
-const ACCENT = '#34D399';
-const ON_ACCENT = '#04231A';
+// aubergine tint is fixed here: it sits on the dark card (7.0:1) and takes
+// Ubuntu's dark aubergine on filled buttons (6.8:1).
+const ACCENT = '#C08BB8';
+const ON_ACCENT = '#2C001E';
 const PAGE_BG = '#050505';
 const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';
