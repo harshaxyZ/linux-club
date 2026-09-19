@@ -70,12 +70,15 @@ export default function ApplyPage() {
         const err = params.get('error');
         const host = params.get('host');
         const cookiesBlocked = params.get('cookies') === '0';
+        const detail = params.get('detail');
+        const slots = params.get('slots');
         const where = host ? ` (on ${host} — use https://webuildnow.in without www)` : '';
         const cookieHint = cookiesBlocked
           ? ' Your browser is not saving sign-in cookies — enable cookies or open this in Chrome/Safari directly (not an in-app browser).'
           : '';
+        const diag = detail || slots ? ` [${[detail, slots].filter(Boolean).join(' | ')}]` : '';
         if (err === 'exchange') {
-          setPageError(`Google sign-in reached us but the session could not be completed${where}.${cookieHint} Try again or use an email code.`);
+          setPageError(`Google sign-in reached us but the session could not be completed${where}.${cookieHint} Try again or use an email code.${diag}`);
         } else if (err) {
           setPageError('Sign-in did not complete. Please try again or use an email code.');
         }

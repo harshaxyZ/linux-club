@@ -25,13 +25,23 @@ export default function AuthCallbackPage() {
 
     const fail = (reason: string, detail?: string) => {
       if (detail) console.error('OAuth exchange error:', detail);
-      const hasCookies =
-        typeof document !== 'undefined' && document.cookie.includes('sb-');
+      const sbNames =
+        typeof document !== 'undefined'
+          ? document.cookie
+              .split(';')
+              .map((c) => c.split('=')[0].trim())
+              .filter((n) => n.startsWith('sb-'))
+          : [];
+      console.error('OAuth debug — sb cookies present:', sbNames.join(', ') || '(none)');
       setFailed(true);
       setTimeout(
         () =>
           router.replace(
-            `${next}?error=${reason}&host=${encodeURIComponent(host)}&cookies=${hasCookies ? '1' : '0'}`
+            `${next}?error=${reason}&host=${encodeURIComponent(host)}&cookies=${
+              sbNames.length > 0 ? '1' : '0'
+            }&detail=${encodeURIComponent((detail || 'unknown').slice(0, 120))}&slots=${encodeURIComponent(
+              sbNames.join(',').slice(0, 160)
+            )}`
           ),
         900
       );
