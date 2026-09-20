@@ -4,7 +4,6 @@ export const SITE = {
   tagline: 'Engineering Beyond the Classroom',
   college: 'Don Bosco Institute of Technology, Bangalore',
   dept: 'Department of Computer Science and Engineering',
-  facultyCoordinator: 'Dr. Dheeraj',
   lab: 'Lab A-306 or Lab A-228',
   hours: '4:00 PM - 6:00 PM on working days',
   discord: process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/AC276UE4NF',
