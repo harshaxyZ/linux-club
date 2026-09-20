@@ -13,7 +13,7 @@ export function Footer() {
             <Logo />
             <p className="text-sm text-ink-muted leading-relaxed max-w-md">
               {SITE.shortName}, {SITE.college}. A student-run technical club building open-source
-              contributors, strong problem solvers, and hackathon teams - guided by {SITE.facultyCoordinator}.
+              contributors, strong problem solvers, and hackathon teams.
             </p>
             <p className="text-xs font-mono text-ink-muted">
               Daily sessions {SITE.hours} • {SITE.lab}

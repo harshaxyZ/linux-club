@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { SITE } from '../../lib/site';
 
 export function Logo({ 
@@ -11,28 +12,16 @@ export function Logo({
   return (
     <div className="flex items-center gap-3 select-none group cursor-pointer">
       <div className="relative flex items-center justify-center">
-        {/* Geometric Minimalist Emblem */}
-        <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center transition-all duration-300 group-hover:border-accent/50 group-hover:shadow-[0_0_15px_rgba(225,29,72,0.25)]">
-          <svg
-            className={className}
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Theme-Adaptive Geometric Shapes */}
-            <path
-              d="M4 6H10V18H4V6Z"
-              className="fill-current text-ink transition-colors"
-            />
-            <path
-              d="M14 6H20V12H14V6Z"
-              className="fill-accent transition-colors"
-            />
-            <path
-              d="M14 14H20V18H14V14Z"
-              className="fill-current text-ink-dark opacity-60 transition-colors"
-            />
-          </svg>
+        {/* OSSC badge emblem */}
+        <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-border transition-all duration-300 group-hover:ring-accent/60 group-hover:shadow-[0_0_15px_var(--accent-glow)]">
+          <Image
+            src="/logo.jpg"
+            alt="OSSC - OpenSource Students Club"
+            width={72}
+            height={72}
+            priority
+            className={`${className} w-full h-full object-cover`}
+          />
         </div>
       </div>
 

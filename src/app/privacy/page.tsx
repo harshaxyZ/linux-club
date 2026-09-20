@@ -31,8 +31,8 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="font-heading font-bold text-ink text-lg mb-2">1. Who we are</h2>
                 <p>
-                  This portal is run by the {SITE.shortName} core team at {SITE.college},
-                  guided by {SITE.facultyCoordinator} ({SITE.dept}). For privacy questions, reach the
+                  This portal is run by the {SITE.shortName} core team at {SITE.college}
+                  ({SITE.dept}). For privacy questions, reach the
                   core team on <a className="text-accent hover:underline" href={SITE.discord} target="_blank" rel="noreferrer">Discord</a> or
                   via <a className="text-accent hover:underline" href={SITE.github} target="_blank" rel="noreferrer">GitHub</a>.
                 </p>

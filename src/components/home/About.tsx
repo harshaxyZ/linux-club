@@ -18,7 +18,7 @@ export function About() {
             Daily practice. Real pull requests. Monthly accountability.
           </h2>
           <p className="text-base text-ink-muted mt-4 leading-relaxed">
-            A student-run technical club under {SITE.dept}, guided by {SITE.facultyCoordinator}.
+            A student-run technical club under {SITE.dept}.
             Core team of 10 across three domains. Daily 2-hour sessions ({SITE.hours}) in {SITE.lab}.
             Every member is scored individually every month - provisional in month one, confirmed on merit.
           </p>
