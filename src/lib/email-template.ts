@@ -13,11 +13,11 @@ import { SITE } from './site';
 
 const INK = '#F1F5F9';
 const MUTED = '#8B98A9';
-// Emails cannot read CSS variables and cannot switch theme, so the Linux/Ubuntu
-// purple is fixed here: it sits on the dark card (7.89:1) and takes Ubuntu's
-// dark aubergine on filled buttons (7.62:1).
-const ACCENT = '#B794F6';
-const ON_ACCENT = '#2C001E';
+// Emails cannot read CSS variables and cannot switch theme, so the OSSC brand
+// violet is fixed here: it sits on the dark card (5.93:1) and takes a near-black
+// aubergine on filled buttons (6.04:1).
+const ACCENT = '#A970FF';
+const ON_ACCENT = '#1A0316';
 const PAGE_BG = '#050505';
 const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';
