@@ -13,11 +13,11 @@ import { SITE } from './site';
 
 const INK = '#F1F5F9';
 const MUTED = '#8B98A9';
-// Emails cannot read CSS variables and cannot switch theme, so the OSSC brand
-// violet is fixed here: it sits on the dark card (5.93:1) and takes a near-black
-// aubergine on filled buttons (6.04:1).
-const ACCENT = '#A970FF';
-const ON_ACCENT = '#1A0316';
+// Emails cannot read CSS variables and cannot switch theme, so the crimson is
+// fixed here: it sits on the dark card (5.26:1) and takes near-black on filled
+// buttons (5.49:1), because white on this red is only 3.67:1.
+const ACCENT = '#F43F5E';
+const ON_ACCENT = '#140208';
 const PAGE_BG = '#050505';
 const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';

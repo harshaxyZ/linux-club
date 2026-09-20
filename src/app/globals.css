@@ -8,30 +8,32 @@
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Dark Theme Tokens (Default) */
-  --bg-main: #150109;
-  --bg-surface: #1E0511;
-  --bg-subsurface: #2A0A19;
+  --bg-main: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-subsurface: #141414;
   --border-color: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.2);
   --text-ink: #FFFFFF;
-  --text-muted: #C9A3B4;
-  --text-subtle: #8A6675;
-  --card-bg: #1E0511;
+  --text-muted: #A3A3A3;
+  --text-subtle: #737373;
+  --card-bg: #0A0A0A;
   --card-border: rgba(255, 255, 255, 0.08);
   --card-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8);
-  --header-bg: rgba(21, 1, 9, 0.85);
-  --input-bg: #1E0511;
+  --header-bg: rgba(0, 0, 0, 0.85);
+  --input-bg: #0A0A0A;
   --input-border: rgba(255, 255, 255, 0.08);
   --input-text: #FFFFFF;
-  --input-placeholder: #7A5464;
+  --input-placeholder: #525252;
 
-  /* OSSC brand: Ubuntu orange on aubergine, matched to the logo. #FF7A33 is
-     8.08:1 on the dark page; dark aubergine text on orange fills is 7.46:1. */
-  --accent: #FF7A33;
-  --accent-hover: #FF9457;
-  --accent-contrast: #210214;
-  --accent-glow: rgba(255, 122, 51, 0.35);
-  --accent-rgb: 255, 122, 51;
+  /* Crimson on monochrome, the palette this project started on. The authentic
+     #E11D48 is 4.47:1 on a black page, a hair under AA, so dark mode uses the
+     next step up (#F43F5E, 5.72:1) and puts near-black on accent fills
+     (5.49:1) because white on this red is only 3.67:1. */
+  --accent: #F43F5E;
+  --accent-hover: #FB7185;
+  --accent-contrast: #140208;
+  --accent-glow: rgba(244, 63, 94, 0.35);
+  --accent-rgb: 244, 63, 94;
 }
 
 html.light {
@@ -53,13 +55,13 @@ html.light {
   --input-text: #0F172A;
   --input-placeholder: #94A3B8;
 
-  /* Light theme: the OSSC burnt orange. #B23A0A is 5.73:1 as text on the page
-     and 6.0:1 with white on top. */
-  --accent: #B23A0A;
-  --accent-hover: #C2410C;
+  /* Light theme takes the deeper crimson: #BE123C is 6.01:1 as text on the page
+     and 6.29:1 with white on top, where the brighter #E11D48 is only 4.49:1. */
+  --accent: #BE123C;
+  --accent-hover: #E11D48;
   --accent-contrast: #FFFFFF;
-  --accent-glow: rgba(178, 58, 10, 0.24);
-  --accent-rgb: 178, 58, 10;
+  --accent-glow: rgba(190, 18, 60, 0.24);
+  --accent-rgb: 190, 18, 60;
 }
 
 html {
@@ -155,8 +157,8 @@ html:not(.light) input:-webkit-autofill:focus,
 html:not(.light) textarea:-webkit-autofill,
 html:not(.light) select:-webkit-autofill {
   -webkit-text-fill-color: #FFFFFF !important;
-  -webkit-box-shadow: 0 0 0px 1000px #1E0511 inset !important;
-  box-shadow: 0 0 0px 1000px #1E0511 inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
+  box-shadow: 0 0 0px 1000px #0A0A0A inset !important;
   transition: background-color 50000s ease-in-out 0s !important;
   caret-color: #FFFFFF !important;
 }
