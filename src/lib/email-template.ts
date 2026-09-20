@@ -23,13 +23,14 @@ const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';
 
 /**
- * Email header banner: the OSSC ribbon image hosted on the site. Unlike <svg>
- * (which Gmail strips), a hosted JPG renders in every client. Absolute URL is
- * required because email has no page origin. Width is capped to the card width;
- * alt text carries the brand name when images are blocked.
+ * Email header banner: the OSSC logo on the card background, hosted on the site.
+ * Unlike <svg> (which Gmail strips) a hosted JPG renders everywhere, and a baked
+ * background avoids the patchy transparency support in email clients. Absolute
+ * URL is required because email has no page origin. `?v=` busts client caches
+ * when the artwork changes.
  */
 function brandBanner(): string {
-  const src = `${env.appUrl.replace(/\/+$/, '')}/banner-ribbon.jpg`;
+  const src = `${env.appUrl.replace(/\/+$/, '')}/banner-email.jpg?v=2`;
   return `
   <a href="${env.appUrl}" style="text-decoration:none;">
     <img src="${src}" width="560" alt="${SITE.name} - ${SITE.tagline}"

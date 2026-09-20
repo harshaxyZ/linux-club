@@ -4,7 +4,7 @@ import { sanitizeFilterValue } from '@/lib/security';
 import { rateLimitAll } from '@/lib/rate-limit';
 import { crossOriginDenied, isSameOrigin } from '@/lib/request';
 import { sendEmail } from '@/lib/email';
-import { decisionEmailHtml, decisionSubject, isNotifyingStatus } from '@/lib/email-decision';
+import { decisionEmailHtml, decisionSubject, formatTestDate, isNotifyingStatus } from '@/lib/email-decision';
 
 const STATUSES = ['pending', 'under_review', 'accepted', 'rejected'] as const;
 const YEARS = ['1st', '2nd', '3rd', '4th'] as const;
@@ -72,6 +72,25 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Valid id and status required.' }, { status: 400, headers: NO_STORE });
   }
 
+  // Rejection context, used only in the decision email. Both are optional so an
+  // existing client that does not send them keeps working, but a reason longer
+  // than the form allows or a nonsense date is refused rather than silently cut.
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+  const nextTestDate = typeof body.nextTestDate === 'string' ? body.nextTestDate.trim() : '';
+
+  if (reason.length > 1000) {
+    return NextResponse.json(
+      { error: 'Reason must be 1000 characters or fewer.' },
+      { status: 400, headers: NO_STORE }
+    );
+  }
+  if (nextTestDate && !formatTestDate(nextTestDate)) {
+    return NextResponse.json(
+      { error: 'Next test date must be a real date in YYYY-MM-DD format.' },
+      { status: 400, headers: NO_STORE }
+    );
+  }
+
   const supabase = adminClient();
 
   // Read first so an unchanged status does not re-send a decision email when a
@@ -100,7 +119,10 @@ export async function PATCH(req: NextRequest) {
         const result = await sendEmail({
           to: applicant.email,
           subject: decisionSubject(status),
-          html: decisionEmailHtml(status, applicant.full_name ?? 'there'),
+          html: decisionEmailHtml(status, applicant.full_name ?? 'there', {
+            reason,
+            nextTestDate,
+          }),
         });
         notified = 'sent';
         console.log(`Decision email (${status}) delivered by ${result.channel}`);

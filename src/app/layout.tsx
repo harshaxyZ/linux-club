@@ -4,10 +4,42 @@ import './globals.css';
 import { ScrollProgressBar } from '../components/ui/ScrollProgressBar';
 import { ThemeProvider } from '../components/theme/ThemeProvider';
 
+import { SITE } from '../lib/site';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE.appUrl),
   title: 'OpenSource Students Club - DBIT',
   description:
     'Student-run Linux, DSA, and open source club at Don Bosco Institute of Technology. Daily sessions 4-6 PM, Lab A-306/A-228. Registration → test → interview → monthly evaluation.',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/logo.jpg?v=2', type: 'image/jpeg' },
+    ],
+    apple: '/logo.jpg?v=2',
+  },
+  openGraph: {
+    title: 'OpenSource Students Club (OSSC) - DBIT',
+    description: `${SITE.tagline}. Student-run Linux, DSA, and open source club at ${SITE.college}.`,
+    url: SITE.appUrl,
+    siteName: SITE.name,
+    images: [
+      {
+        url: '/og-image.jpg?v=2',
+        width: 1200,
+        height: 630,
+        alt: `${SITE.name} - ${SITE.tagline}`,
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OpenSource Students Club (OSSC) - DBIT',
+    description: `${SITE.tagline}. Student-run Linux, DSA, and open source club at ${SITE.college}.`,
+    images: ['/og-image.jpg?v=2'],
+  },
 };
 
 export const viewport = {
@@ -16,7 +48,7 @@ export const viewport = {
   viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#F8FAFC' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: dark)', color: '#150109' },
   ],
 };
 

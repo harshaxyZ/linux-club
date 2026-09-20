@@ -6,6 +6,7 @@ export const SITE = {
   dept: 'Department of Computer Science and Engineering',
   lab: 'Lab A-306 or Lab A-228',
   hours: '4:00 PM - 6:00 PM on working days',
+  appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://webuildnow.in',
   discord: process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/AC276UE4NF',
   github: process.env.NEXT_PUBLIC_GITHUB_URL || 'https://github.com/OSSC-DBIT',
   /** Company page. The slug still carries the old name; LinkedIn keeps it stable. */

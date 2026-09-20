@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TypewriterEffect } from '../ui/TypewriterEffect';
@@ -15,23 +14,6 @@ export function Hero() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[300px] bg-accent/[0.06] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 w-full">
-
-        {/* Brand ribbon */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mx-auto mb-8 w-full max-w-xl overflow-hidden rounded-2xl border border-border shadow-lg shadow-accent/10 ring-1 ring-accent/20"
-        >
-          <Image
-            src="/banner-ribbon.jpg"
-            alt="OSSC - OpenSource Students Club - Engineering Beyond the Classroom"
-            width={1254}
-            height={600}
-            priority
-            className="w-full h-auto object-cover"
-          />
-        </motion.div>
 
         {/* Main Headline */}
         <motion.h1

@@ -50,6 +50,12 @@ export default function AdminPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [statusFeedback, setStatusFeedback] = useState<StatusFeedback | null>(null);
 
+  // Rejection dialog: which application is being rejected, and the context the
+  // reviewer supplies for the email.
+  const [rejectFor, setRejectFor] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectDate, setRejectDate] = useState('');
+
   const supabase = useMemo(() => createClient(), []);
   useEffect(() => setMounted(true), []);
 
@@ -153,14 +159,18 @@ export default function AdminPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [detailsOpen]);
 
-  const updateStatus = async (id: string, status: Application['status']) => {
+  const updateStatus = async (
+    id: string,
+    status: Application['status'],
+    extras?: { reason?: string; nextTestDate?: string }
+  ) => {
     setActionError('');
     setSavingId(id);
     try {
       const res = await fetch('/api/admin/applications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...deviceHeaders() },
-        body: JSON.stringify({ id, status }),
+        body: JSON.stringify({ id, status, ...extras }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -176,11 +186,28 @@ export default function AdminPage() {
         notified: data.notified ?? 'not_applicable',
       });
       setStatsKey((k) => k + 1);
+      setRejectFor(null);
     } catch {
       setActionError('Network error.');
     } finally {
       setSavingId(null);
     }
+  };
+
+  /**
+   * Rejection is the only status that needs context, so it opens a dialog to
+   * collect the reason and the next test date before anything is sent. Every
+   * other status applies straight away.
+   */
+  const requestStatusChange = (id: string, status: Application['status']) => {
+    if (status === 'rejected') {
+      setActionError('');
+      setRejectReason('');
+      setRejectDate('');
+      setRejectFor(id);
+      return;
+    }
+    void updateStatus(id, status);
   };
 
   const sendInvite = async (e: React.FormEvent) => {
@@ -373,7 +400,7 @@ export default function AdminPage() {
           {/* Side panel on large screens. Below that the same details open as a modal. */}
           <div className="hidden lg:block lg:col-span-5 minimal-card rounded-3xl p-6">
             {selectedApp ? (
-              <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} savingId={savingId} feedback={statusFeedback} />
+              <ApplicantDetails app={selectedApp} onStatusChange={requestStatusChange} savingId={savingId} feedback={statusFeedback} />
             ) : (
               <div className="min-h-[300px] flex flex-col items-center justify-center text-ink-muted">
                 <Terminal className="w-10 h-10 opacity-30 mb-3" aria-hidden="true" />
@@ -407,7 +434,99 @@ export default function AdminPage() {
                 <X className="w-4 h-4" aria-hidden="true" /><span>Close</span>
               </button>
             </div>
-            <ApplicantDetails app={selectedApp} onStatusChange={updateStatus} savingId={savingId} feedback={statusFeedback} />
+            <ApplicantDetails app={selectedApp} onStatusChange={requestStatusChange} savingId={savingId} feedback={statusFeedback} />
+          </div>
+        </div>
+      )}
+
+      {rejectFor && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reject application"
+        >
+          <div className="minimal-card rounded-3xl p-6 w-full max-w-md">
+            <h3 className="font-heading font-extrabold text-xl">Reject application</h3>
+            <p className="text-xs text-ink-muted mt-1 mb-5">
+              The applicant is emailed this reason along with the next test date, so write it as
+              feedback they can act on.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void updateStatus(rejectFor, 'rejected', {
+                  reason: rejectReason.trim(),
+                  nextTestDate: rejectDate,
+                });
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label
+                  htmlFor="reject-reason"
+                  className="block text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-1.5"
+                >
+                  Reason (required)
+                </label>
+                <textarea
+                  id="reject-reason"
+                  required
+                  minLength={10}
+                  maxLength={1000}
+                  rows={4}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="e.g. Fundamentals were solid, but the statement of intent did not show any hands-on practice yet. Build one small project and reapply."
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-dark focus:border-accent focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] font-mono text-ink-dark">
+                  {rejectReason.trim().length}/1000
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="reject-date"
+                  className="block text-[11px] font-mono uppercase tracking-wider text-ink-muted mb-1.5"
+                >
+                  Next test date (required)
+                </label>
+                <input
+                  id="reject-date"
+                  type="date"
+                  required
+                  value={rejectDate}
+                  onChange={(e) => setRejectDate(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] font-mono text-ink-dark">
+                  Included in the email as the date they can try again.
+                </p>
+              </div>
+
+              {actionError && (
+                <p className="text-xs font-mono text-red-400">{actionError}</p>
+              )}
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={savingId === rejectFor}
+                  className="flex-1 inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover !text-accent-contrast font-mono font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl disabled:opacity-60 cursor-pointer"
+                >
+                  {savingId === rejectFor ? 'Sending...' : 'Reject & send email'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRejectFor(null)}
+                  className="px-4 py-2.5 rounded-xl border border-border text-xs font-mono text-ink-muted hover:text-ink cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -449,3 +568,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
