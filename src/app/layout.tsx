@@ -11,13 +11,9 @@ export const metadata: Metadata = {
   title: 'OpenSource Students Club - DBIT',
   description:
     'Student-run Linux, DSA, and open source club at Don Bosco Institute of Technology. Daily sessions 4-6 PM, Lab A-306/A-228. Registration → test → interview → monthly evaluation.',
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/logo.jpg?v=2', type: 'image/jpeg' },
-    ],
-    apple: '/logo.jpg?v=2',
-  },
+  // Favicon and apple-touch-icon come from the app/icon.png and
+  // app/apple-icon.png file conventions, which Next fingerprints with a content
+  // hash - so a changed logo busts the browser cache on its own.
   openGraph: {
     title: 'OpenSource Students Club (OSSC) - DBIT',
     description: `${SITE.tagline}. Student-run Linux, DSA, and open source club at ${SITE.college}.`,
