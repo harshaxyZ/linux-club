@@ -25,14 +25,14 @@
   --input-text: #FFFFFF;
   --input-placeholder: #525252;
 
-  /* Linux/Ubuntu purple theme. A vivid violet reads well on the black page:
-     #B794F6 is 8.58:1 on black. White on this tint fails AA (2.45:1), so fills
-     put Ubuntu's dark aubergine #2C001E on top (7.62:1). */
-  --accent: #B794F6;
-  --accent-hover: #C9AFF9;
-  --accent-contrast: #2C001E;
-  --accent-glow: rgba(183, 148, 246, 0.35);
-  --accent-rgb: 183, 148, 246;
+  /* Linux/Ubuntu purple, matched to the OSSC logo's violet. #A970FF is a vivid
+     brand violet at 6.45:1 on black. White on it fails AA (3.26:1), so fills put
+     a near-black aubergine on top. */
+  --accent: #A970FF;
+  --accent-hover: #BC8CFF;
+  --accent-contrast: #1A0316;
+  --accent-glow: rgba(169, 112, 255, 0.35);
+  --accent-rgb: 169, 112, 255;
 }
 
 html.light {
@@ -54,13 +54,13 @@ html.light {
   --input-text: #0F172A;
   --input-placeholder: #94A3B8;
 
-  /* Light theme uses a deep Linux/Ubuntu purple: #6B21A8 is 8.33:1 as text on
-     the page and 8.72:1 with white on top. */
-  --accent: #6B21A8;
-  --accent-hover: #7C2FBD;
+  /* Light theme: the OSSC violet as a deep tone. #6D28D9 is 6.79:1 as text on
+     the page and 7.1:1 with white on top. */
+  --accent: #6D28D9;
+  --accent-hover: #7C3AED;
   --accent-contrast: #FFFFFF;
-  --accent-glow: rgba(107, 33, 168, 0.28);
-  --accent-rgb: 107, 33, 168;
+  --accent-glow: rgba(109, 40, 217, 0.28);
+  --accent-rgb: 109, 40, 217;
 }
 
 html {

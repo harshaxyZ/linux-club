@@ -13,34 +13,28 @@ import { SITE } from './site';
 
 const INK = '#F1F5F9';
 const MUTED = '#8B98A9';
-// Emails cannot read CSS variables and cannot switch theme, so the Linux/Ubuntu
-// purple is fixed here: it sits on the dark card (7.89:1) and takes Ubuntu's
-// dark aubergine on filled buttons (7.62:1).
-const ACCENT = '#B794F6';
-const ON_ACCENT = '#2C001E';
+// Emails cannot read CSS variables and cannot switch theme, so the OSSC brand
+// violet is fixed here: it sits on the dark card (5.93:1) and takes a near-black
+// aubergine on filled buttons (6.04:1).
+const ACCENT = '#A970FF';
+const ON_ACCENT = '#1A0316';
 const PAGE_BG = '#050505';
 const CARD_BG = '#0B0E14';
 const BORDER = '#1F2733';
 
-/** The icon.svg mark (white bar, red square, grey square) as nested tables. */
-function logoMark(): string {
+/**
+ * Email header banner: the OSSC ribbon image hosted on the site. Unlike <svg>
+ * (which Gmail strips), a hosted JPG renders in every client. Absolute URL is
+ * required because email has no page origin. Width is capped to the card width;
+ * alt text carries the brand name when images are blocked.
+ */
+function brandBanner(): string {
+  const src = `${env.appUrl.replace(/\/+$/, '')}/banner-ribbon.jpg`;
   return `
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    <tr>
-      <td style="padding:0 8px 0 0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-          <tr><td width="14" height="36" style="width:14px;height:36px;background-color:${INK};line-height:36px;font-size:0;">&nbsp;</td></tr>
-        </table>
-      </td>
-      <td>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-          <tr><td width="14" height="15" style="width:14px;height:15px;background-color:${ACCENT};line-height:15px;font-size:0;">&nbsp;</td></tr>
-          <tr><td height="6" style="height:6px;line-height:6px;font-size:0;">&nbsp;</td></tr>
-          <tr><td width="14" height="15" style="width:14px;height:15px;background-color:#737373;line-height:15px;font-size:0;">&nbsp;</td></tr>
-        </table>
-      </td>
-    </tr>
-  </table>`;
+  <a href="${env.appUrl}" style="text-decoration:none;">
+    <img src="${src}" width="560" alt="${SITE.name} - ${SITE.tagline}"
+      style="display:block;width:100%;max-width:560px;height:auto;border:0;outline:none;text-decoration:none;border-radius:12px;" />
+  </a>`;
 }
 
 export interface EmailLayoutArgs {
@@ -87,22 +81,10 @@ export function emailLayout({ title, preheader, bodyHtml, cta, note }: EmailLayo
     <td align="center" style="padding:28px 12px;">
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:560px;">
 
-        <!-- Brand -->
+        <!-- Brand banner -->
         <tr>
           <td style="padding:0 4px 18px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-              <tr>
-                <td valign="middle" style="padding-right:12px;">${logoMark()}</td>
-                <td valign="middle">
-                  <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:17px;font-weight:800;letter-spacing:-0.01em;color:${INK};">
-                    <span style="color:${ACCENT};">OSS</span>C<span style="color:${MUTED};font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:12px;">&nbsp;DBIT</span>
-                  </div>
-                  <div style="font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:${MUTED};padding-top:3px;">
-                    ${SITE.tagline}
-                  </div>
-                </td>
-              </tr>
-            </table>
+            ${brandBanner()}
           </td>
         </tr>
 
